@@ -103,10 +103,15 @@ export default class AIChat extends Base {
      * Try to extract transcript text from the player's active tracks around the current time.
      */
     async getTranscriptContext(currentTime) {
-        // Attempt to access text tracks from the HTML5 video element if possible
-        // This logic heavily depends on the player implementation (Youtube vs HTML5)
+        // 1. Check if Generic Subtitle Plugin provides data
+        if (window.IV && window.IV.subtitle && typeof window.IV.subtitle.getTranscript === 'function') {
+            const transcript = window.IV.subtitle.getTranscript(currentTime);
+            if (transcript) {
+                return transcript;
+            }
+        }
 
-        // For HTML5 video (and some wraps), we might access the underlying video element
+        // 2. Fallback: Attempt to access text tracks from the HTML5 video element
         let tracks = [];
         let videoElement = null;
 
@@ -139,10 +144,6 @@ export default class AIChat extends Base {
                 }
             }
         }
-
-        // Fallback: Check if the player object has a 'captions' property populated (e.g. from yt.js or html5video.js)
-        // Note: Youtube Iframe API does not expose raw cue text to JS due to privacy/CORS.
-        // We can only reliably get this for self-hosted video with tracks.
 
         return "";
     }
