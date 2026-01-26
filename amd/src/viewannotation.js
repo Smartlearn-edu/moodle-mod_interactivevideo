@@ -25,9 +25,9 @@
 define([
     'jquery', 'core/str', 'core/event_dispatcher', 'core/toast', 'mod_interactivevideo/quickform',
     'mod_interactivevideo/libraries/jquery-ui'
-], function($, str, eventDispatcher, Toast, quickform) {
+], function ($, str, eventDispatcher, Toast, quickform) {
     const getString = str.get_string;
-    const {dispatchEvent} = eventDispatcher;
+    const { dispatchEvent } = eventDispatcher;
     const ctRenderer = {};
     const isBS5 = $('body').hasClass('bs-5');
     const bsAffix = isBS5 ? '-bs' : '';
@@ -65,7 +65,7 @@ define([
 
     let $meta = $('.metadata');
     let $wrapper = $('#wrapper');
-    const renderAnnotationItems = async(annos, start, totaltime) => {
+    const renderAnnotationItems = async (annos, start, totaltime) => {
         $meta.empty();
         $interactionNav.find('ul').empty();
         $videoNav.find('ul').empty();
@@ -140,7 +140,7 @@ define([
             const advanced = JSON.parse(x.advanced);
             if ((advanced.visiblebeforecompleted == "1" && !x.completed)
                 || (advanced.visibleaftercompleted == "1" && x.completed)) {
-                $('[data-region="chapterlists"] li').each(function() {
+                $('[data-region="chapterlists"] li').each(function () {
 
                     const cstart = $(this).data('start');
                     const cend = $(this).data('end');
@@ -162,20 +162,20 @@ define([
         } else {
             $('#chaptertoggle').show();
         }
-        dispatchEvent('chapterrendered', {'annotations': annos});
+        dispatchEvent('chapterrendered', { 'annotations': annos });
     };
 
     const fireConfetti = () => {
         var duration = 5 * 1000;
         let confetti = window.confetti;
         var animationEnd = Date.now() + duration;
-        var defaults = {startVelocity: 30, spread: 360, ticks: 60, zIndex: 1055};
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1055 };
 
         const randomInRange = (min, max) => {
             return Math.random() * (max - min) + min;
         };
 
-        var interval = setInterval(function() {
+        var interval = setInterval(function () {
             var timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
@@ -184,8 +184,8 @@ define([
 
             var particleCount = 50 * (timeLeft / duration);
             // Since particles fall down, start a bit higher than random
-            confetti({...defaults, particleCount, origin: {x: randomInRange(0.1, 0.3), y: Math.random() - 0.2}});
-            confetti({...defaults, particleCount, origin: {x: randomInRange(0.7, 0.9), y: Math.random() - 0.2}});
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
             return true;
         }, 250);
     };
@@ -228,7 +228,7 @@ define([
          * @param {boolean} iseditor - The editor flag.
          * @return {void}
          */
-        init: function(
+        init: function (
             url, cmid, interaction, course, userid, start = 0, end,
             completionpercentage, gradeiteminstance, grademax, vtype,
             preventskip = true, moment = null, doptions = {}, token = null, extendedcompletion = null, isPreviewMode = false,
@@ -315,7 +315,7 @@ define([
              * @param {number} percentage
              * @returns {Promise<boolean>}
              */
-            const replaceProgressBars = async(percentage) => {
+            const replaceProgressBars = async (percentage) => {
                 let livestring = await getString('live', 'mod_interactivevideo');
                 return new Promise((resolve) => {
                     percentage = percentage > 100 ? 100 : percentage;
@@ -382,7 +382,7 @@ define([
                     }
                 });
 
-                $.when(annnoitems, userprogress, getContentTypes).done(async function(annos, progress, ct) {
+                $.when(annnoitems, userprogress, getContentTypes).done(async function (annos, progress, ct) {
                     annotations = JSON.parse(annos[0]);
                     if (player.live) { // Live video does not have end time.
                         annotations = annotations.filter(x => x.timestamp < 0);
@@ -418,6 +418,14 @@ define([
                     await initializeContentTypeRenderers(contentTypes, releventAnnotations, player, interaction, course, userid,
                         completionpercentage, gradeiteminstance, grademax, vtype, preventskip,
                         totaltime, start, end, cmid, token, completionid);
+
+                    // Auto-run "always on" interactions like aichat
+                    const alwaysOn = releventAnnotations.filter(x => x.type === 'aichat');
+                    if (alwaysOn.length > 0) {
+                        for (const anno of alwaysOn) {
+                            runInteraction(anno, false, true);
+                        }
+                    }
 
                     await renderAnnotationItems(releventAnnotations, start, end - start);
                     $("#play").removeClass('d-none');
@@ -595,7 +603,7 @@ define([
                     }
                     await Promise.all(contentTypes.map(contentType => {
                         return new Promise((resolve) => {
-                            require([contentType.amdmodule], function(Type) {
+                            require([contentType.amdmodule], function (Type) {
                                 ctRenderer[contentType.name] = new Type(player, releventAnnotations, interaction, course, userid,
                                     completionpercentage, gradeiteminstance, grademax, vtype, preventskip, totaltime, start,
                                     end, contentType, cmid, token, displayoptions, completionid, extendedcompletion, {
@@ -609,7 +617,7 @@ define([
                         });
                     }));
 
-                    await Promise.all(contentTypes.map(async(contentType) => {
+                    await Promise.all(contentTypes.map(async (contentType) => {
                         try {
                             await ctRenderer[contentType.name].init();
                         } catch (error) {
@@ -625,16 +633,18 @@ define([
              * @param {boolean} force force run the interaction
              * @returns {void}
              */
-            const runInteraction = async(annotation, force = false) => {
+            const runInteraction = async (annotation, force = false, noPause = false) => {
                 if (subvideo) {
                     return;
                 }
                 // First making sure the player is paused.
-                player.pause();
-                let isPaused = await player.isPaused();
-                if (!isPaused) {
-                    runInteraction(annotation);
-                    return;
+                if (!noPause) {
+                    player.pause();
+                    let isPaused = await player.isPaused();
+                    if (!isPaused) {
+                        runInteraction(annotation, force, noPause);
+                        return;
+                    }
                 }
                 // Continue with the interaction. Take notes of the earlier interactions to avoid accidental re-runs.
                 lastrun = annotation.id;
@@ -685,15 +695,15 @@ define([
                         activityType.runInteraction(annotation);
                         // In case there is an active interaction, trigger the interactionclose event.
                         if ($('#message.active').length > 0) {
-                            $('#message.active').each(function() {
+                            $('#message.active').each(function () {
                                 const id = $(this).data('id');
                                 if (id != annotation.id) {
                                     $(this).removeClass('active');
-                                    dispatchEvent('interactionclose', {'annotation': {'id': id}});
+                                    dispatchEvent('interactionclose', { 'annotation': { 'id': id } });
                                 }
                             });
                         }
-                        dispatchEvent('interactionrun', {'annotation': annotation});
+                        dispatchEvent('interactionrun', { 'annotation': annotation });
                     }, 100);
                 }
 
@@ -709,7 +719,7 @@ define([
              * @function shareMoment
              * @returns {Promise<void>} A promise that resolves when the video has been successfully sought and played.
              */
-            const shareMoment = async() => {
+            const shareMoment = async () => {
                 if (!moment) {
                     return;
                 }
@@ -721,7 +731,7 @@ define([
                 window.history.replaceState(null, null, newurl);
             };
 
-            const updateTime = async(duration) => {
+            const updateTime = async (duration) => {
                 duration = Number(duration);
                 let toUpdatetime = false;
                 if (!end || end == 0) {
@@ -749,13 +759,13 @@ define([
                     });
                 }
                 end = !end || end == 0 || end > duration ? duration : end;
-                return {start, end};
+                return { start, end };
             };
 
             let loaded = false;
             let lookbacktime = 0;
 
-            const onLoaded = async(reloaded = false, e = null) => {
+            const onLoaded = async (reloaded = false, e = null) => {
                 let $changecaption = $('#changecaption');
                 if (e) {
                     const captions = e.detail.tracks;
@@ -809,7 +819,7 @@ define([
 
                 const duration = player.totaltime;
                 if (!reloaded) {
-                    ({start, end} = await updateTime(duration));
+                    ({ start, end } = await updateTime(duration));
                 }
                 totaltime = end - start;
 
@@ -873,7 +883,7 @@ define([
                     if ($body.hasClass('embed-mode')) {
                         return;
                     }
-                    $('#annotation-content')[0].scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
+                    $('#annotation-content')[0].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
                 }
             };
 
@@ -896,7 +906,7 @@ define([
              * @param {boolean} main Whether the video is the default video.
              * @returns {Promise<void>} A promise that resolves when the player is fully initialized and ready.
              */
-            const onReady = async(reloaded = false, main = false) => {
+            const onReady = async (reloaded = false, main = false) => {
                 if ((window.braveEthereum || window.braveSolana) && !player.allowAutoplay) {
                     player.destroy();
                     Toast.add(await getString('braveautoplay', 'mod_interactivevideo'), {
@@ -970,7 +980,7 @@ define([
                         'containment': '#video-nav',
                         'axis': 'x',
                         'cursor': 'col-resize',
-                        'start': async function(event, ui) {
+                        'start': async function (event, ui) {
                             const isPaused = await player.isPaused();
                             if (!isPaused) {
                                 player.pause();
@@ -988,7 +998,7 @@ define([
                             const formattedTime = convertSecondsToHMS(time);
                             $position.find('#timelabel').text(formattedTime);
                         },
-                        'drag': async function(event, ui) {
+                        'drag': async function (event, ui) {
                             let timestamp = ((ui.position.left) / $videoNav.width()) * totaltime + start;
                             let percentage = ui.position.left / $videoNav.width();
                             await replaceProgressBars(percentage * 100);
@@ -996,14 +1006,14 @@ define([
                             $seek.find('#position #timelabel').text(convertSecondsToHMS(timestamp - start));
                             await player.seek(timestamp);
                         },
-                        'stop': async function() {
+                        'stop': async function () {
                             // Reset the launched annotation.
                             lastrun = null;
                             viewedAnno = [];
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 $taskinfo.removeClass('no-pointer-events');
                             }, 200);
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 $('#seekhead').removeClass('active');
                                 $seek.find('#position').remove();
                             }, 1000);
@@ -1011,7 +1021,7 @@ define([
                         }
                     });
 
-                    dispatchEvent('timeupdate', {'time': start}); // Dispatch the timeupdate event with the start time.
+                    dispatchEvent('timeupdate', { 'time': start }); // Dispatch the timeupdate event with the start time.
                 }
             };
 
@@ -1025,7 +1035,7 @@ define([
              * - Sets the tooltip of the play/pause button to 'play'.
              */
             let lastSaved;
-            const onPaused = async(savepoint = false) => {
+            const onPaused = async (savepoint = false) => {
                 if (!playerReady) {
                     return;
                 }
@@ -1079,7 +1089,7 @@ define([
              * - Clears the interval and pauses the player.
              * - Updates the play/pause button to show the play icon.
              */
-            const onEnded = async() => {
+            const onEnded = async () => {
                 if (!playerReady) {
                     return;
                 }
@@ -1096,10 +1106,10 @@ define([
 
                 onPaused(); // Run the onPaused function to save the last watched point.
 
-                dispatchEvent('timeupdate', {'time': end});
+                dispatchEvent('timeupdate', { 'time': end });
                 $('#restart').removeClass('d-none').fadeIn(300);
                 $endscreen.removeClass('d-none').fadeIn(300);
-                dispatchEvent('ended', {'time': end});
+                dispatchEvent('ended', { 'time': end });
                 replaceProgressBars(100);
                 videoEnded = true;
                 viewedAnno = [];
@@ -1120,7 +1130,7 @@ define([
                             userid: userid,
                             updatestate: extendedcompletion && JSON.parse(extendedcompletion).watchtillend == 1 ? 1 : 0,
                         },
-                        success: function(data) {
+                        success: function (data) {
                             try {
                                 data = JSON.parse(data);
                             } catch {
@@ -1145,7 +1155,7 @@ define([
              * @param {number} t - The time to seek to. If not provided, the current time of the player will be used.
              * @returns {Promise<void>} - A promise that resolves when the seek operation is complete.
              */
-            const onSeek = async(t) => {
+            const onSeek = async (t) => {
                 if (!playerReady) {
                     return;
                 }
@@ -1167,7 +1177,7 @@ define([
                 }
                 const percentage = (t - start) / (totaltime) * 100;
                 replaceProgressBars(percentage);
-                dispatchEvent('timeupdate', {'time': t});
+                dispatchEvent('timeupdate', { 'time': t });
                 // Reset the launched annotation to include only the ones that are before the current time.
                 viewedAnno = [];
                 releventAnnotations.forEach(x => {
@@ -1197,7 +1207,7 @@ define([
              * @function onPlaying
              * @returns {Promise<void>} A promise that resolves when the function completes.
              */
-            const onPlaying = async() => {
+            const onPlaying = async () => {
                 // Reset the annotation content.
                 if (!playerReady) {
                     return;
@@ -1225,7 +1235,7 @@ define([
                     dispatchEvent('iv:playerStarted');
                 }
 
-                const intervalFunction = async function() {
+                const intervalFunction = async function () {
                     const isPlaying = await player.isPlaying();
                     const isEnded = await player.isEnded();
                     const isPaused = await player.isPaused();
@@ -1255,7 +1265,7 @@ define([
 
                     videoEnded = false;
 
-                    dispatchEvent('timeupdate', {'time': t});
+                    dispatchEvent('timeupdate', { 'time': t });
 
                     const time = Number(t.toFixed(2));
                     // If it is the same annotation we just run, then we don't need to run it again.
@@ -1285,7 +1295,7 @@ define([
                             $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] [data-bs-toggle=tooltip]')
                                 .tooltip('show');
                         }
-                        setTimeout(function() {
+                        setTimeout(function () {
                             $interactionNav.find('.annotation[data-id="' + theAnnotation.id + '"] .item')
                                 .trigger('mouseout').removeClass('active');
                             if (isBS5) {
@@ -1320,7 +1330,7 @@ define([
                 };
 
                 if (player.useAnimationFrame) {
-                    const animate = async() => {
+                    const animate = async () => {
                         const isPlaying = await player.isPlaying();
                         if (isPlaying) {
                             intervalFunction();
@@ -1336,7 +1346,7 @@ define([
                 }
             };
 
-            const onPlay = async() => {
+            const onPlay = async () => {
                 if (!playerReady) {
                     return;
                 }
@@ -1355,11 +1365,11 @@ define([
                 $('#playpause').attr('data-original-title', await getString('pausetooltip', 'mod_interactivevideo'));
 
                 if ($('#message.active').length > 0) {
-                    $('#message.active').each(function() {
+                    $('#message.active').each(function () {
                         const mid = $(this).data('id');
                         if (mid) {
                             $(this).removeClass('active');
-                            dispatchEvent('interactionclose', {'annotation': {'id': mid}});
+                            dispatchEvent('interactionclose', { 'annotation': { 'id': mid } });
                         }
                     });
                 }
@@ -1378,7 +1388,7 @@ define([
                 // Autohide controls if $videowrapper is not hovered after 5 seconds.
                 if (displayoptions.autohidecontrols == 1
                     && !$body.hasClass('embed-mode') && !$body.hasClass('mobileapp') && !$body.hasClass('iframe')) {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         if (!$videowrapper.is(':hover')) {
                             $controller.addClass('fadeOut');
                         }
@@ -1387,7 +1397,7 @@ define([
             };
 
             // Implement the player.
-            require(['mod_interactivevideo/player/' + vtype], function(VideoPlayer) {
+            require(['mod_interactivevideo/player/' + vtype], function (VideoPlayer) {
                 player = new VideoPlayer();
                 player.poster = $('#posterimagehidden').attr('src');
                 player.doptions = doptions;
@@ -1414,7 +1424,7 @@ define([
             let $toast = $('.toast-wrapper').detach();
             $wrapper.append($toast);
 
-            $(document).on('click', '.completion-required', async function(e) {
+            $(document).on('click', '.completion-required', async function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 Toast.add(await getString('youmustcompletethistaskfirst', 'mod_interactivevideo'), {
@@ -1423,7 +1433,7 @@ define([
                 return;
             });
 
-            const handleUnskippable = async(t) => {
+            const handleUnskippable = async (t) => {
                 // Handle unskippable interactions.
                 if (!t) {
                     t = await player.getCurrentTime();
@@ -1448,7 +1458,7 @@ define([
                 return false;
             };
 
-            $(document).on('timeupdate', async function(e) {
+            $(document).on('timeupdate', async function (e) {
                 if (!playerReady || isPreviewMode || player.live) {
                     return;
                 }
@@ -1472,19 +1482,19 @@ define([
             });
 
             // Handle the refresh button:: allowing user to refresh the content
-            $(document).on('click', '#message #refresh', function(e) {
+            $(document).on('click', '#message #refresh', function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 $(this).tooltip('hide');
                 const id = $(this).data('id');
                 const annotation = releventAnnotations.find(x => x.id == id);
                 $(this).closest('#message').remove();
-                dispatchEvent('interactionrefresh', {'annotation': annotation});
+                dispatchEvent('interactionrefresh', { 'annotation': annotation });
                 runInteraction(annotation, true);
             });
 
             // Handle video control events:: fullscreen toggle
-            $(document).on('click', '#fullscreen', async function(e) {
+            $(document).on('click', '#fullscreen', async function (e) {
                 e.preventDefault();
                 if (!playerReady) {
                     return;
@@ -1524,7 +1534,7 @@ define([
                 }
             });
 
-            $(document).on('fullscreenchange', async function() {
+            $(document).on('fullscreenchange', async function () {
                 if (document.fullscreenElement) {
                     $wrapper.addClass('fullscreen');
                     $('#interactivevideo-container').addClass('fullscreen');
@@ -1547,7 +1557,7 @@ define([
                 $wrapper.find('#fullscreen i').toggleClass('bi-fullscreen bi-fullscreen-exit');
             });
 
-            $(document).on('visibilitychange', async function() {
+            $(document).on('visibilitychange', async function () {
                 // Pause video when the tab is not visible and the pauseonblur option is enabled.
                 if (displayoptions.pauseonblur && displayoptions.pauseonblur == 1) {
                     if (!playerReady) {
@@ -1561,7 +1571,7 @@ define([
             });
 
             // Handle player size change event.
-            $(document).on('click', '#controller #expand', function(e) {
+            $(document).on('click', '#controller #expand', function (e) {
                 e.preventDefault();
                 $body.toggleClass('limited-width');
                 localStorage.setItem('limitedwidth', $body.hasClass('limited-width'));
@@ -1569,7 +1579,7 @@ define([
             });
 
             // Handle share this moment event.
-            $(document).on('click', '#controller #share', async function(e) {
+            $(document).on('click', '#controller #share', async function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 let time = await player.getCurrentTime();
@@ -1588,7 +1598,7 @@ define([
             });
 
             // Display time when user hover on the progress bar.
-            $(document).on('mouseenter', '#video-nav #seek', function(e) {
+            $(document).on('mouseenter', '#video-nav #seek', function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -1604,7 +1614,7 @@ define([
                 $position.find('#timelabel').text(formattedTime);
             });
 
-            $(document).on('mousemove', '#video-nav #seek', function(e) {
+            $(document).on('mousemove', '#video-nav #seek', function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -1617,12 +1627,12 @@ define([
                 $('#position #timelabel').text(formattedTime);
             });
 
-            $(document).on('mouseleave', '#video-nav #seek', function() {
+            $(document).on('mouseleave', '#video-nav #seek', function () {
                 $('#position').remove();
             });
 
             // Handle annotation click event:: when user click on the annotation on the progress bar
-            $(document).on('click', '#interactions-nav .annotation, #video-nav .annotation', async function(e) {
+            $(document).on('click', '#interactions-nav .annotation, #video-nav .annotation', async function (e) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 const timestamp = $(this).data('timestamp');
@@ -1665,7 +1675,7 @@ define([
             });
 
             // Handle seeking event:: when user click on the progress bar
-            $(document).on('click', '#seek', async function(e) {
+            $(document).on('click', '#seek', async function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -1699,7 +1709,7 @@ define([
             });
 
             // Handle video control events:: play
-            $(document).on('click', '#start-screen #play', async function(e) {
+            $(document).on('click', '#start-screen #play', async function (e) {
                 e.preventDefault();
                 if ($(this).hasClass('reload')) {
                     location.reload();
@@ -1717,7 +1727,7 @@ define([
             });
 
             // Handle video control events:: restart
-            $(document).on('click', '#end-screen #restart', async function(e) {
+            $(document).on('click', '#end-screen #restart', async function (e) {
                 e.preventDefault();
                 dispatchEvent('iv:playerRestart');
                 $('#message').remove();
@@ -1742,7 +1752,7 @@ define([
             });
 
             // Handle video control events:: pause/resume when user click on the video
-            $(document).on('click', '#video-wrapper .video-block', async function(e) {
+            $(document).on('click', '#video-wrapper .video-block', async function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -1763,12 +1773,12 @@ define([
                 }
             });
 
-            $(document).on('iv:playerStarted', async function() {
+            $(document).on('iv:playerStarted', async function () {
                 $('#playpause').find('i').removeClass('bi-play-fill').addClass('bi-pause-fill');
                 $('#playpause').attr('data-original-title', await getString('pausetooltip', 'mod_interactivevideo'));
             });
 
-            $(document).on('click', '#playpause', async function(e) {
+            $(document).on('click', '#playpause', async function (e) {
                 if (!playerReady) {
                     return;
                 }
@@ -1788,7 +1798,7 @@ define([
                 }
             });
 
-            $(document).on('click', 'li.anno', async function(e) {
+            $(document).on('click', 'li.anno', async function (e) {
                 e.preventDefault();
                 const id = $(this).data('id');
                 $(`li.annotation[data-id=${id}]`).trigger('click');
@@ -1797,7 +1807,7 @@ define([
                 }
             });
 
-            $(document).on('click', '#toolbar #annotation-toggle', function(e) {
+            $(document).on('click', '#toolbar #annotation-toggle', function (e) {
                 e.preventDefault();
                 $body.addClass('hassidebar');
                 $('#annotation-sidebar').removeClass('hide');
@@ -1805,15 +1815,15 @@ define([
                 const current = $(`#sidebar-nav .sidebar-nav-item.active`).data('id');
                 if (current) {
                     // Dispatch the interaction run event.
-                    dispatchEvent('interactionrun', {'annotation': releventAnnotations.find(x => x.id == current)});
+                    dispatchEvent('interactionrun', { 'annotation': releventAnnotations.find(x => x.id == current) });
                 }
             });
 
             // Autohide controls when mouse leaves #video-wrapper after 5 seconds.
             if (displayoptions.autohidecontrols == 1
                 && !$body.hasClass('embed-mode') && !$body.hasClass('mobileapp') && !$body.hasClass('iframe')) {
-                $videowrapper.on('mouseleave', function() {
-                    setTimeout(function() {
+                $videowrapper.on('mouseleave', function () {
+                    setTimeout(function () {
                         // Check if the mouse is still over #video-wrapper.
                         if ($videowrapper.is(':hover')) {
                             return;
@@ -1823,8 +1833,8 @@ define([
                     }, 3000);
                 });
 
-                $videowrapper.on('mouseenter', function() {
-                    setTimeout(function() {
+                $videowrapper.on('mouseenter', function () {
+                    setTimeout(function () {
                         if (!$videowrapper.is(':hover')) {
                             return;
                         }
@@ -1834,7 +1844,7 @@ define([
             }
 
             // Handle video control events:: mute/unmute
-            $(document).on('click', '#mute', async function(e) {
+            $(document).on('click', '#mute', async function (e) {
                 e.preventDefault();
                 $(this).tooltip('hide');
                 $(this).toggleClass('active');
@@ -1850,7 +1860,7 @@ define([
             });
 
             // Handle video control events:: playrate change
-            $(document).on('click', '.changerate', function(e) {
+            $(document).on('click', '.changerate', function (e) {
                 e.preventDefault();
                 const rate = $(this).data('rate');
                 player.setRate(rate);
@@ -1859,7 +1869,7 @@ define([
             });
 
             // Handle video control:: Quality change
-            $("#changequality").on('shown.bs.dropdown', async function() {
+            $("#changequality").on('shown.bs.dropdown', async function () {
                 let quality = await player.getQualities();
                 $('#qualitieslist').empty();
                 let currentQuality = quality.currentQuality;
@@ -1875,7 +1885,7 @@ define([
                 $(this).find(`[data${bsAffix}-toggle=dropdown]`).dropdown('update');
             });
 
-            $(document).on('click', '.changequality', function(e) {
+            $(document).on('click', '.changequality', function (e) {
                 e.preventDefault();
                 const quality = $(this).data('quality');
                 player.setQuality(quality);
@@ -1883,7 +1893,7 @@ define([
                 $(this).find('i').addClass('bi-check');
             });
 
-            $(document).on('click', '#changecaption .changecaption', function(e) {
+            $(document).on('click', '#changecaption .changecaption', function (e) {
                 e.preventDefault();
                 const lang = $(this).data('lang');
                 player.setCaption(lang);
@@ -1899,7 +1909,7 @@ define([
             });
 
             if (displayoptions.preventseeking == 0) {
-                $rewindbutton.on('click', async function() {
+                $rewindbutton.on('click', async function () {
                     let t = await player.getCurrentTime() - 5;
                     if (t < start) {
                         t = start;
@@ -1908,7 +1918,7 @@ define([
                 });
 
 
-                $forwardbutton.on('click', async function() {
+                $forwardbutton.on('click', async function () {
                     let t = await player.getCurrentTime() + 5;
                     if (t > end) {
                         t = end;
@@ -1917,48 +1927,48 @@ define([
                 });
             }
 
-            $(document).one('iv:playerReady', function() {
+            $(document).one('iv:playerReady', function () {
                 onReady();
             });
 
-            $(document).on('iv:playerDestroyed', function() {
+            $(document).on('iv:playerDestroyed', function () {
                 playerReady = false;
             });
 
-            const addPlayerEvents = function() {
-                $(document).on('iv:playerPaused', function() {
+            const addPlayerEvents = function () {
+                $(document).on('iv:playerPaused', function () {
                     // Remove the tooltip.
                     $('.tooltip').remove();
                     dispatchEvent('videoPaused');
                     onPaused();
                 });
 
-                $(document).on('iv:playerPlaying', function() {
+                $(document).on('iv:playerPlaying', function () {
                     onPlaying();
                 });
 
-                $(document).on('iv:playerPlay', function() {
+                $(document).on('iv:playerPlay', function () {
                     onPlay();
                     $loader.fadeOut(300);
                 });
 
-                $(document).on('iv:playerEnded', function() {
+                $(document).on('iv:playerEnded', function () {
                     onEnded();
                 });
 
-                $(document).on('iv:playerSeek', function(e) {
+                $(document).on('iv:playerSeek', function (e) {
                     if (player.live) {
                         return;
                     }
                     onSeek(e.detail.time);
                 });
 
-                $(document).on('iv:playerLoaded', function(e) {
+                $(document).on('iv:playerLoaded', function (e) {
                     const reloaded = e.detail.reloaded || false;
                     onLoaded(reloaded, e);
                 });
 
-                $(document).on('iv:playerError', async function() {
+                $(document).on('iv:playerError', async function () {
                     $annotationcanvas.removeClass('d-none w-0');
                     $startscreen.addClass('d-none');
                     $('.video-block').addClass('no-pointer bg-transparent');
@@ -1975,12 +1985,12 @@ define([
                     }
                 });
 
-                $(document).on('iv:playerRateChange', function(e) {
+                $(document).on('iv:playerRateChange', function (e) {
                     $('.changerate').find('i').removeClass('bi-check');
                     $(`.changerate[data-rate="${e.originalEvent.detail.rate}"]`).find('i').addClass('bi-check');
                 });
 
-                $(document).on('iv:playerQualityChange', function(e) {
+                $(document).on('iv:playerQualityChange', function (e) {
                     $('#changequality').attr('data-current', e.originalEvent.detail.quality);
                     $('.changequality').find('i').removeClass('bi-check');
                     $(`.changequality[data-quality="${e.originalEvent.detail.quality}"]`).find('i').addClass('bi-check');
@@ -1989,7 +1999,7 @@ define([
 
             addPlayerEvents();
 
-            $(document).on('annotationitemsrendered', function() {
+            $(document).on('annotationitemsrendered', function () {
                 try {
                     $wrapper.find(`[data${bsAffix}-toggle="tooltip"]`).tooltip({
                         container: '#wrapper',
@@ -2037,7 +2047,7 @@ define([
                     const urlParams = new URLSearchParams(window.location.search);
                     const noautoplay = urlParams.get('da');
                     if (autoplay && player.allowAutoplay && noautoplay != '1') {
-                        setTimeout(async() => {
+                        setTimeout(async () => {
                             // Make sure to unmute.
                             try {
                                 player.unMute();
@@ -2053,12 +2063,12 @@ define([
                 }
             });
 
-            $(`[data${bsAffix}-toggle="tooltip"]`).on('click', function() {
+            $(`[data${bsAffix}-toggle="tooltip"]`).on('click', function () {
                 const $this = $(this);
                 $this.tooltip('hide');
             });
 
-            window.addEventListener('beforeunload', function() {
+            window.addEventListener('beforeunload', function () {
                 player.pause();
                 onPaused(true);
                 // Remove all event listeners before unload.
@@ -2066,7 +2076,7 @@ define([
                 cancelAnimationFrame(playingInterval);
             });
 
-            $(document).on('interactionrun', function(e) {
+            $(document).on('interactionrun', function (e) {
                 const annotation = e.originalEvent.detail.annotation;
                 // Update start time to the window.IVANNO item.
                 let windowAnnos = window.ANNOS;
@@ -2084,7 +2094,7 @@ define([
                 window.ANNOS = windowAnnos;
             });
 
-            $(document).on('interactionclose interactionrefresh', function(e) {
+            $(document).on('interactionclose interactionrefresh', function (e) {
                 const annotation = e.originalEvent.detail.annotation;
                 // Update start time to the window.IVANNO item.
                 let windowAnnos = window.ANNOS;
@@ -2099,7 +2109,7 @@ define([
                 window.ANNOS = windowAnnos;
             });
 
-            $(document).on('completionupdated', async function(e) {
+            $(document).on('completionupdated', async function (e) {
                 let overallcomplete = JSON.parse(e.originalEvent.detail.response).overallcomplete;
                 if (overallcomplete) {
                     if (JSON.parse(e.originalEvent.detail.response).overallcomplete > 0) {
@@ -2159,7 +2169,7 @@ define([
                 }
             });
 
-            $(document).on('iv:autoplayBlocked', async function(e) {
+            $(document).on('iv:autoplayBlocked', async function (e) {
                 e.preventDefault();
                 if (e.originalEvent.detail.requireVideoBlock === false) {
                     $('.video-block').remove();
@@ -2172,7 +2182,7 @@ define([
                 });
             });
 
-            const updatePlayer = async(newPlayer) => {
+            const updatePlayer = async (newPlayer) => {
                 player = newPlayer;
                 start = newPlayer.start;
                 end = newPlayer.end;
@@ -2180,12 +2190,12 @@ define([
                 loaded = false;
                 // Change player in all content types.
                 let types = Object.keys(ctRenderer);
-                return await Promise.all(types.map(async(type) => {
+                return await Promise.all(types.map(async (type) => {
                     return ctRenderer[type].setPlayer(newPlayer, start, end, vtype);
                 }));
             };
 
-            $(document).on('iv:playerReload', async function(e) {
+            $(document).on('iv:playerReload', async function (e) {
                 playerReady = true;
                 viewedAnno = [];
                 lastrun = null;
@@ -2206,15 +2216,15 @@ define([
                 replaceProgressBars(detail.currentTime / (end - start) * 100);
             });
 
-            $(document).on('click', '#message[data-placement]:not(.active)', function(e) {
+            $(document).on('click', '#message[data-placement]:not(.active)', function (e) {
                 e.preventDefault();
                 $(this).addClass('active');
                 // Dispatch the interaction run event.
-                dispatchEvent('interactionrun', {'annotation': releventAnnotations.find(x => x.id == $(this).data('id'))});
+                dispatchEvent('interactionrun', { 'annotation': releventAnnotations.find(x => x.id == $(this).data('id')) });
             });
 
             // Implement keyboard shortcuts.
-            document.addEventListener('keydown', async function(e) {
+            document.addEventListener('keydown', async function (e) {
                 // Ignore spacebar when focus is on an input, textarea, or button
                 const activeTag = document.activeElement.tagName.toLowerCase();
                 if (activeTag !== 'body') {
