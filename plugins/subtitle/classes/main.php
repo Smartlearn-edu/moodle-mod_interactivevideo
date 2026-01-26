@@ -75,7 +75,7 @@ class main
 
         // Retrieve the file url
         $fs = get_file_storage();
-        $files = $fs->get_area_files($contextid, 'mod_interactivevideo', 'subtitle', $id, 'sortorder, itemid, filepath, filename', false);
+        $files = $fs->get_area_files($contextid, 'mod_interactivevideo', 'content', $id, 'sortorder, itemid, filepath, filename', false);
         $fileurl = '';
         if ($files) {
             $file = reset($files);
@@ -123,7 +123,7 @@ class main
         // Handle related files "subtitle" field.
         require_once($CFG->libdir . '/filelib.php');
         $fs = get_file_storage();
-        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'subtitle', (int) $annotation->oldid, 'id ASC', false);
+        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'content', (int) $annotation->oldid, 'id ASC', false);
         foreach ($files as $file) {
             $filerecord = [
                 'itemid' => $annotation->id,

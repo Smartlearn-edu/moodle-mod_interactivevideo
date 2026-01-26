@@ -39,7 +39,7 @@ class form extends \mod_interactivevideo\form\base_form
             $draftitemid,
             $data->contextid,
             'mod_interactivevideo',
-            'subtitle',
+            'content',
             $data->id,
             ['subdirs' => 0, 'maxfiles' => 1]
         );
@@ -79,7 +79,7 @@ class form extends \mod_interactivevideo\form\base_form
             $draftitemid,
             $fromform->contextid,
             'mod_interactivevideo',
-            'subtitle',
+            'content',
             $fromform->id,
             ['subdirs' => 0, 'maxfiles' => 1]
         );
