@@ -25,7 +25,8 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mod_interactivevideo_mod_form extends moodleform_mod {
+class mod_interactivevideo_mod_form extends moodleform_mod
+{
     /**
      * Plugins with mform.
      *
@@ -40,7 +41,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      * @param stdClass $cm
      * @param stdClass $course
      */
-    public function __construct($current, $section, $cm, $course) {
+    public function __construct($current, $section, $cm, $course)
+    {
         $allsubplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
         $subpluginclass = [];
         foreach ($allsubplugins as $subplugin) {
@@ -56,7 +58,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
     /**
      * Defines forms elements
      */
-    public function definition() {
+    public function definition()
+    {
         global $CFG, $PAGE, $USER, $OUTPUT;
         $bsaffix = $CFG->branch >= 500 ? '-bs' : '';
         $current = $this->current;
@@ -64,7 +67,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
         $mform = $this->_form;
 
         $videotypes = get_config('mod_interactivevideo', 'videosources');
-        $videotypes = explode(',', $videotypes);
+        $videotypes = array_filter(explode(',', $videotypes));
         $allowupload = in_array('html5video', $videotypes);
         // Allow link if $videotypes length is greater than 0 after removing html5video.
         $allowlink = count(array_diff($videotypes, ['html5video'])) > 0;
@@ -469,7 +472,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      * @param array $data
      * @param array $files
      */
-    public function validation($data, $files) {
+    public function validation($data, $files)
+    {
         global $USER;
         $suffix = '';
         if (method_exists($this, 'get_suffix')) {
@@ -610,7 +614,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      * Prepare data before applying to populating form.
      * @param array $defaultvalues
      */
-    public function data_preprocessing(&$defaultvalues) {
+    public function data_preprocessing(&$defaultvalues)
+    {
         if ($this->current->instance) {
             $suffix = '';
             if (method_exists($this, 'get_suffix')) {
@@ -690,10 +695,10 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 }
                 if (
                     in_array($option, [
-                    'beforecompletion',
-                    'aftercompletion',
-                    'beforecompletionbehavior',
-                    'aftercompletionbehavior',
+                        'beforecompletion',
+                        'aftercompletion',
+                        'beforecompletionbehavior',
+                        'aftercompletionbehavior',
                     ]) && $defaultvalues[$option] == 0
                 ) {
                     $defaultvalues[$option] = [];
@@ -779,7 +784,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      *
      * @return array Contains the names of the added form elements
      */
-    public function add_completion_rules() {
+    public function add_completion_rules()
+    {
         global $CFG;
         $bsaffix = $CFG->branch >= 500 ? '-bs' : '';
         $mform = $this->_form;
@@ -841,7 +847,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      * @param array $data
      * @return bool
      */
-    public function completion_rule_enabled($data) {
+    public function completion_rule_enabled($data)
+    {
         $hascompletion = false;
         $suffix = '';
         if (method_exists($this, 'get_suffix')) {
@@ -875,7 +882,8 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
      * Custom data should be added here
      * @param stdClass $data
      */
-    public function data_postprocessing($data) {
+    public function data_postprocessing($data)
+    {
         $suffix = '';
         if (method_exists($this, 'get_suffix')) {
             $suffix = $this->get_suffix();
