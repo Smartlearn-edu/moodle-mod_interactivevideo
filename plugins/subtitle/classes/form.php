@@ -34,18 +34,10 @@ class form extends \mod_interactivevideo\form\base_form
     {
         $data = $this->set_data_default();
 
-        $draftitemid = file_get_submitted_draft_itemid('subtitlefile');
-
-        file_prepare_draft_area(
-            $draftitemid,
-            $data->contextid,
-            'mod_interactivevideo',
-            'content',
-            $data->id,
-            ['subdirs' => 0, 'maxfiles' => 1]
-        );
-
-        $data->subtitlefile = $draftitemid;
+        // Load existing content
+        if (!empty($data->contentform)) {
+            $data->subtitletext = $data->contentform;
+        }
 
         // Restore other fields
         $data->intg1 = $data->intg1 ?? 0;
@@ -65,6 +57,9 @@ class form extends \mod_interactivevideo\form\base_form
         $fromform = $this->pre_processing_data($fromform);
         $fromform->advanced = $this->process_advanced_settings($fromform);
 
+        // Map subtitletext to content
+        $fromform->content = $fromform->subtitletext;
+
         if ($fromform->id > 0) {
             $fromform->timemodified = time();
             $DB->update_record('interactivevideo_items', $fromform);
@@ -73,20 +68,6 @@ class form extends \mod_interactivevideo\form\base_form
             $fromform->timemodified = $fromform->timecreated;
             $fromform->id = $DB->insert_record('interactivevideo_items', $fromform);
         }
-
-        // Save file
-        $draftitemid = file_get_submitted_draft_itemid('subtitlefile');
-        file_save_draft_area_files(
-            $draftitemid,
-            $fromform->contextid,
-            'mod_interactivevideo',
-            'content',
-            $fromform->id,
-            ['subdirs' => 0, 'maxfiles' => 1]
-        );
-
-        // We update the record again just to be safe, though not strictly necessary if no new fields added
-        $DB->update_record('interactivevideo_items', $fromform);
 
         return $fromform;
     }
@@ -107,14 +88,16 @@ class form extends \mod_interactivevideo\form\base_form
         $mform->setDefault('title', 'Subtitle');
         $mform->addRule('title', get_string('required'), 'required', null, 'client');
 
-        // File Manager for Subtitle
+        // Text Area for Subtitle Content (VTT/SRT)
         $mform->addElement(
-            'filemanager',
-            'subtitlefile',
-            get_string('uploadfile', 'ivplugin_subtitle'),
-            null,
-            ['subdirs' => 0, 'maxbytes' => 1048576, 'maxfiles' => 1, 'accepted_types' => ['.vtt', '.srt']]
+            'textarea',
+            'subtitletext',
+            get_string('subtitlecontent', 'ivplugin_subtitle'),
+            ['rows' => 10, 'class' => 'w-100']
         );
+        $mform->setType('subtitletext', PARAM_RAW);
+        $mform->addRule('subtitletext', get_string('required'), 'required', null, 'client');
+        $mform->addHelpButton('subtitletext', 'subtitlecontent', 'ivplugin_subtitle');
 
         // Toggle for showing subtitle
         $mform->addElement('selectyesno', 'intg1', get_string('showsubtitle', 'ivplugin_subtitle'));

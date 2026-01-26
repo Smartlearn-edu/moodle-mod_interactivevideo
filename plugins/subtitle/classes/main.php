@@ -69,45 +69,24 @@ class main
      */
     public function get_content($arg)
     {
-        global $CFG;
+        $content = isset($arg['content']) ? $arg['content'] : '';
         $id = $arg["id"];
-        $contextid = $arg["contextid"];
-
-        // Retrieve the file url
-        $fs = get_file_storage();
-        $files = $fs->get_area_files($contextid, 'mod_interactivevideo', 'content', $id, 'sortorder, itemid, filepath, filename', false);
-        $fileurl = '';
-        if ($files) {
-            $file = reset($files);
-            $fileurl = \moodle_url::make_pluginfile_url(
-                $file->get_contextid(),
-                $file->get_component(),
-                $file->get_filearea(),
-                $file->get_itemid(),
-                $file->get_filepath(),
-                $file->get_filename()
-            )->out();
-        }
-
-        // Debugging: List all files found
-        $debuginfo = "Debug Info: Context: $contextid, ID: $id, Area: content. Files found: " . count($files);
-        foreach ($files as $f) {
-            $debuginfo .= " | " . $f->get_filename() . " (" . $f->get_filesize() . ")";
-        }
 
         $showsubtitle = isset($arg['intg1']) && $arg['intg1'] == 1;
 
-        $content = '<div class="ivplugin-subtitle-container ' . ($showsubtitle ? '' : 'd-none') . '" 
-                        data-subtitle-url="' . $fileurl . '" 
-                        data-show-subtitle="' . ($showsubtitle ? '1' : '0') . '"
-                        data-debug-info="' . htmlspecialchars($debuginfo) . '">
+        // We embed the raw content in a data attribute
+        // encoding it to be safe for HTML attribute
+        $encodedContent = base64_encode($content);
+
+        $html = '<div class="ivplugin-subtitle-container ' . ($showsubtitle ? '' : 'd-none') . '" 
+                        data-subtitle-content="' . $encodedContent . '" 
+                        data-show-subtitle="' . ($showsubtitle ? '1' : '0') . '">
                         <div class="subtitle-text p-2 text-center bg-dark text-white opacity-75 rounded">
                             <span class="iv-subtitle-current-text">...</span>
                         </div>
-                        <div style="display:none;" id="iv-subtitle-debug">' . $debuginfo . '</div> <!-- Hidden debug -->
                     </div>';
 
-        return $content;
+        return $html;
     }
 
     /**
@@ -123,19 +102,7 @@ class main
      */
     public function copy($fromcourse, $tocourse, $fromcm, $tocm, $annotation, $oldcontextid)
     {
-        global $CFG;
-        $annotation = (object) $annotation;
-        // Handle related files "subtitle" field.
-        require_once($CFG->libdir . '/filelib.php');
-        $fs = get_file_storage();
-        $files = $fs->get_area_files($oldcontextid, 'mod_interactivevideo', 'content', (int) $annotation->oldid, 'id ASC', false);
-        foreach ($files as $file) {
-            $filerecord = [
-                'itemid' => $annotation->id,
-                'contextid' => $annotation->contextid,
-            ];
-            $fs->create_file_from_storedfile($filerecord, $file);
-        }
+        // No special file copying needed since we store data in content field
         return $annotation;
     }
 
