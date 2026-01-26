@@ -21,7 +21,7 @@
  * @copyright  2024 Sokunthearith Makara <sokunthearithmakara@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import {dispatchEvent} from 'core/event_dispatcher';
+import { dispatchEvent } from 'core/event_dispatcher';
 import allowAutoplay from 'mod_interactivevideo/player/checkautoplay';
 import $ from 'jquery';
 
@@ -43,7 +43,7 @@ class Html5Video {
         this.node = node;
         let self = this;
 
-        const loadVideo = async(player) => {
+        const loadVideo = async (player) => {
             // Determine video type based on file extension.
             if (url.indexOf('.m3u8') !== -1) {
                 let Hls = await import('mod_interactivevideo/player/hls');
@@ -84,7 +84,7 @@ class Html5Video {
             player.setAttribute('disablePictureInPicture', '');
             // eslint-disable-next-line promise/catch-or-return, promise/always-return
             loadVideo(player).then((player) => {
-                player.addEventListener('loadedmetadata', function() {
+                player.addEventListener('loadedmetadata', function () {
                     resolve({
                         duration: player.duration,
                         title: player.title,
@@ -143,18 +143,18 @@ class Html5Video {
                 hls.attachMedia(player);
                 this.support.quality = true;
 
-                hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
                     this.hlsdata = data;
                 });
 
                 // Handle quality change.
-                hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
-                    dispatchEvent('iv:playerQualityChange', {quality: data.level});
+                hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+                    dispatchEvent('iv:playerQualityChange', { quality: data.level });
                 });
 
-                hls.on(Hls.Events.ERROR, function(event, data) {
+                hls.on(Hls.Events.ERROR, function (event, data) {
                     if (data.fatal) {
-                        dispatchEvent('iv:playerError', {error: data});
+                        dispatchEvent('iv:playerError', { error: data });
                     }
                 });
             } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
@@ -172,14 +172,14 @@ class Html5Video {
                 var dashPlayer = dashjs.MediaPlayer().create();
                 dashPlayer.initialize(player, url, false);
                 this.dash = dashPlayer;
-                dashPlayer.on(dashjs.MediaPlayer.events.REPRESENTATION_SWITCH, function() {
+                dashPlayer.on(dashjs.MediaPlayer.events.REPRESENTATION_SWITCH, function () {
                     const current = dashPlayer.getCurrentRepresentationForType('video');
                     if (!current) {
                         return;
                     }
-                    dispatchEvent('iv:playerQualityChange', {quality: current.absoluteIndex});
+                    dispatchEvent('iv:playerQualityChange', { quality: current.absoluteIndex });
                 });
-                dashPlayer.on(dashjs.MediaPlayer.events.ERROR, function() {
+                dashPlayer.on(dashjs.MediaPlayer.events.ERROR, function () {
                     dispatchEvent('iv:playerError');
                 });
                 this.support.quality = true;
@@ -219,7 +219,7 @@ class Html5Video {
         // Disable picture-in-picture.
         player.setAttribute('disablePictureInPicture', '');
 
-        player.addEventListener('loadedmetadata', function() {
+        player.addEventListener('loadedmetadata', function () {
             self.aspectratio = self.ratio();
             if (isNaN(self.aspectratio)) {
                 self.aspectratio = 16 / 9;
@@ -251,9 +251,9 @@ class Html5Video {
                             const country = track.lang.split('-')[1];
                             let displayNames;
                             try {
-                                displayNames = new Intl.DisplayNames([`${M.cfg.language}`], {type: 'language'});
+                                displayNames = new Intl.DisplayNames([`${M.cfg.language}`], { type: 'language' });
                             } catch (e) {
-                                displayNames = new Intl.DisplayNames(['en'], {type: 'language'});
+                                displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
                             }
                             let label;
                             if (country == 'auto') {
@@ -284,9 +284,9 @@ class Html5Video {
                         const country = track.lang.split('-')[1];
                         let displayNames;
                         try {
-                            displayNames = new Intl.DisplayNames([`${M.cfg.language}`], {type: 'language'});
+                            displayNames = new Intl.DisplayNames([`${M.cfg.language}`], { type: 'language' });
                         } catch (e) {
-                            displayNames = new Intl.DisplayNames(['en'], {type: 'language'});
+                            displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
                         }
                         let label;
                         if (country == 'auto') {
@@ -307,25 +307,41 @@ class Html5Video {
                 });
                 dispatchEvent('iv:playerReady', null, document.getElementById(node));
             } else { // Standard video source.
+                const tracks = Array.from(player.textTracks).map(t => {
+                    let label = t.label;
+                    if (!label) {
+                        try {
+                            const displayNames = new Intl.DisplayNames([`${M.cfg.language}`], { type: 'language' });
+                            label = displayNames.of(t.language);
+                        } catch (e) {
+                            label = t.language.toUpperCase();
+                        }
+                    }
+                    return {
+                        label: label,
+                        code: t.language
+                    };
+                });
+                self.captions = tracks;
                 dispatchEvent('iv:playerLoaded', {
-                    tracks: null,
+                    tracks: self.captions || null,
                     reloaded: reloaded,
                 });
                 dispatchEvent('iv:playerReady', null, document.getElementById(node));
             }
         });
 
-        player.addEventListener('pause', function() {
+        player.addEventListener('pause', function () {
             self.paused = true;
             dispatchEvent('iv:playerPaused');
         });
 
-        player.addEventListener('play', function() {
+        player.addEventListener('play', function () {
             self.paused = false;
             dispatchEvent('iv:playerPlay');
         });
 
-        player.addEventListener('timeupdate', function() {
+        player.addEventListener('timeupdate', function () {
             if (self.paused) {
                 return;
             }
@@ -351,21 +367,21 @@ class Html5Video {
             }
         });
 
-        player.addEventListener('error', function(e) {
-            dispatchEvent('iv:playerError', {error: e});
+        player.addEventListener('error', function (e) {
+            dispatchEvent('iv:playerError', { error: e });
         });
 
-        player.addEventListener('ratechange', function() {
-            dispatchEvent('iv:playerRateChange', {rate: player.playbackRate});
+        player.addEventListener('ratechange', function () {
+            dispatchEvent('iv:playerRateChange', { rate: player.playbackRate });
         });
 
-        player.addEventListener('waiting', function() {
+        player.addEventListener('waiting', function () {
             dispatchEvent('iv:playerBuffering');
         });
 
         // Volume change event.
-        player.addEventListener('volumechange', function() {
-            dispatchEvent('iv:playerVolumeChange', {volume: player.volume});
+        player.addEventListener('volumechange', function () {
+            dispatchEvent('iv:playerVolumeChange', { volume: player.volume });
         });
 
         this.player = player;
@@ -490,10 +506,10 @@ class Html5Video {
             return time;
         }
         let currentTime = this.getCurrentTime();
-        dispatchEvent('iv:playerSeekStart', {time: currentTime});
+        dispatchEvent('iv:playerSeekStart', { time: currentTime });
         this.ended = false;
         this.player.currentTime = time;
-        dispatchEvent('iv:playerSeek', {time});
+        dispatchEvent('iv:playerSeek', { time });
         return true;
     }
     /**
@@ -627,7 +643,7 @@ class Html5Video {
         }
         this.player.muted = true;
         this.player.volume = 0;
-        dispatchEvent('iv:playerVolumeChange', {volume: 0});
+        dispatchEvent('iv:playerVolumeChange', { volume: 0 });
     }
     /**
      * Unmutes the video player.
@@ -638,7 +654,7 @@ class Html5Video {
         }
         this.player.muted = false;
         this.player.volume = 1;
-        dispatchEvent('iv:playerVolumeChange', {volume: 1});
+        dispatchEvent('iv:playerVolumeChange', { volume: 1 });
     }
 
     isMuted() {
@@ -759,8 +775,7 @@ class Html5Video {
                     }
                 }
             }
-        }
-        if (this.hls) {
+        } else if (this.hls) {
             if (track === 'off' || track == '') {
                 this.hls.subtitleTrack = -1; // Disable subtitles.
             } else {
@@ -774,6 +789,18 @@ class Html5Video {
                     }
                 }
             }
+        } else {
+            // Standard HTML5 video.
+            const tracks = Array.from(this.player.textTracks);
+            tracks.forEach(t => {
+                if (track === 'off' || track === '') {
+                    t.mode = 'hidden';
+                } else if (t.language === track) {
+                    t.mode = 'showing';
+                } else {
+                    t.mode = 'hidden';
+                }
+            });
         }
         return track;
     }
