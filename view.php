@@ -501,7 +501,6 @@ $datafortemplate = [
         || get_config('mod_interactivevideo', 'enableembedly'),
     "courseindex" => $courseindex,
     "hascourseindex" => !empty($courseindex) && $rendernav,
-    "tracks" => class_exists('\ivplugin_subtitle\ivmform') ? \ivplugin_subtitle\ivmform::get_tracks($cm, $modulecontext) : [],
 ];
 echo $OUTPUT->render_from_template('mod_interactivevideo/player/player', $datafortemplate);
 

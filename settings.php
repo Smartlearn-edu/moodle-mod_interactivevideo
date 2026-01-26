@@ -81,10 +81,12 @@ $contenttypes = [];
 foreach ($subplugins as $subplugin) {
     $version = get_config('ivplugin_' . $subplugin);
     if (!empty($version->version)) {
-        $contenttypes['ivplugin_' . $subplugin] = get_string('pluginname', 'ivplugin_' . $subplugin)
-            . ' (' . $version->version . ')';
+        $contenttypes['ivplugin_' . $subplugin] = '<span class="ivname">'
+            . get_string('pluginname', 'ivplugin_' . $subplugin) . '</span>'
+            . '<small class="text-muted">' . $version->version . '</small>';
     } else {
-        $contenttypes['ivplugin_' . $subplugin] = get_string('pluginname', 'ivplugin_' . $subplugin);
+        $contenttypes['ivplugin_' . $subplugin] = '<span class="ivname">'
+            . get_string('pluginname', 'ivplugin_' . $subplugin) . '</span>';
     }
 }
 

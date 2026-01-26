@@ -35,8 +35,7 @@ define('INTERACTIVEVIDEO_EVENT_TYPE_DUE', 'due');
  * @param string $feature Constant representing the feature.
  * @return true | null True if the feature is supported, null otherwise.
  */
-function interactivevideo_supports($feature)
-{
+function interactivevideo_supports($feature) {
     switch ($feature) {
         case FEATURE_MOD_INTRO:
             return true;
@@ -68,8 +67,7 @@ function interactivevideo_supports($feature)
  * @param string $classname The class name.
  * @return array The subplugins.
  */
-function interactivevideo_get_subplugins($classname)
-{
+function interactivevideo_get_subplugins($classname) {
     $allsubplugins = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
     $subpluginclass = [];
     foreach ($allsubplugins as $subplugin) {
@@ -87,8 +85,7 @@ function interactivevideo_get_subplugins($classname)
  * @param mixed $moduleinstance
  * @return mixed
  */
-function interactivevideo_display_options($moduleinstance)
-{
+function interactivevideo_display_options($moduleinstance) {
     $options = [];
     $options['cardsize'] = $moduleinstance->cardsize ?? 'large';
     $options['theme'] = $moduleinstance->theme ?? '';
@@ -142,8 +139,7 @@ function interactivevideo_display_options($moduleinstance)
  * @param bool $batch True if the function is called from bulk insert.
  * @return int The id of the newly inserted record.
  */
-function interactivevideo_add_instance($moduleinstance, $mform = null, $batch = false)
-{
+function interactivevideo_add_instance($moduleinstance, $mform = null, $batch = false) {
     global $DB, $USER;
 
     $cmid = $moduleinstance->coursemodule;
@@ -272,8 +268,7 @@ function interactivevideo_add_instance($moduleinstance, $mform = null, $batch = 
  * @param mod_interactivevideo_mod_form $mform The form.
  * @return bool True if successful, false otherwise.
  */
-function interactivevideo_update_instance($moduleinstance, $mform = null)
-{
+function interactivevideo_update_instance($moduleinstance, $mform = null) {
     global $DB, $USER;
     $moduleinstance->id = $moduleinstance->instance;
     // Before we do anything, we need to check if the module instance has any video file, so we can delete it later.
@@ -385,8 +380,7 @@ function interactivevideo_update_instance($moduleinstance, $mform = null)
  * @param int $id Id of the module instance.
  * @return bool True if successful, false on failure.
  */
-function interactivevideo_delete_instance($id)
-{
+function interactivevideo_delete_instance($id) {
     global $DB;
 
     $exists = $DB->get_record('interactivevideo', ['id' => $id]);
@@ -438,8 +432,7 @@ function interactivevideo_delete_instance($id)
  * @param stdClass $context
  * @return string[].
  */
-function interactivevideo_get_file_areas($course, $cm, $context)
-{
+function interactivevideo_get_file_areas($course, $cm, $context) {
     return [
         'public',
         'content',
@@ -448,7 +441,6 @@ function interactivevideo_get_file_areas($course, $cm, $context)
         'text1',
         'text2',
         'text3',
-        'subtitles',
     ];
 }
 
@@ -469,8 +461,7 @@ function interactivevideo_get_file_areas($course, $cm, $context)
  * @param string $filename
  * @return file_info Instance or null if not found.
  */
-function interactivevideo_get_file_info($browser, $areas, $course, $cm, $context, $filearea, $itemid, $filepath, $filename)
-{
+function interactivevideo_get_file_info($browser, $areas, $course, $cm, $context, $filearea, $itemid, $filepath, $filename) {
     return null;
 }
 
@@ -488,8 +479,7 @@ function interactivevideo_get_file_info($browser, $areas, $course, $cm, $context
  * @param bool $forcedownload Whether or not force download.
  * @param array $options Additional options affecting the file serving.
  */
-function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = [])
-{
+function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
 
     if ($filearea != 'public' && $filearea != 'posterimage') {
         require_login($course, true, $cm);
@@ -522,8 +512,7 @@ function interactivevideo_pluginfile($course, $cm, $context, $filearea, $args, $
  * @param settings_navigation $settingsnav {@see settings_navigation}
  * @param navigation_node $interactivevideonode {@see navigation_node}
  */
-function interactivevideo_extend_settings_navigation($settingsnav, $interactivevideonode = null)
-{
+function interactivevideo_extend_settings_navigation($settingsnav, $interactivevideonode = null) {
     $page = $settingsnav->get_page();
 
     // Interaction tab.
@@ -561,8 +550,7 @@ function interactivevideo_extend_settings_navigation($settingsnav, $interactivev
  * @return cached_cm_info An object on information that the courses
  *                        will know about (most noticeably, an icon).
  */
-function interactivevideo_get_coursemodule_info($coursemodule)
-{
+function interactivevideo_get_coursemodule_info($coursemodule) {
     global $DB;
     $dbparams = ['id' => $coursemodule->instance];
     $interactive = $DB->get_record('interactivevideo', $dbparams, '*');
@@ -611,8 +599,7 @@ function interactivevideo_get_coursemodule_info($coursemodule)
  * @param cm_info $cm
  * @return string
  */
-function interactivevideo_afterlink(cm_info $cm)
-{
+function interactivevideo_afterlink(cm_info $cm) {
     // Set after link.
     $afterlink = '';
 
@@ -665,8 +652,7 @@ function interactivevideo_afterlink(cm_info $cm)
  *
  * @param cm_info $cm The course module information object.
  */
-function interactivevideo_cm_info_dynamic(cm_info $cm)
-{
+function interactivevideo_cm_info_dynamic(cm_info $cm) {
     global $PAGE;
     if (strpos($PAGE->bodyclasses, 'path-course-view') === false) { // MUST be in course view only.
         return;
@@ -690,8 +676,7 @@ function interactivevideo_cm_info_dynamic(cm_info $cm)
  *
  * @param cm_info $cm The course module information object.
  */
-function interactivevideo_cm_info_view(cm_info $cm)
-{
+function interactivevideo_cm_info_view(cm_info $cm) {
     global $PAGE;
     $customdata = $cm->customdata;
     $displayoptions = json_decode($customdata['displayoptions']);
@@ -709,8 +694,7 @@ function interactivevideo_cm_info_view(cm_info $cm)
  *
  * @param cm_info $cm Course module information.
  */
-function interactivevideo_displayinline(cm_info $cm)
-{
+function interactivevideo_displayinline(cm_info $cm) {
     global $DB, $USER, $CFG, $OUTPUT, $PAGE;
     $customdata = $cm->customdata;
     if (!isset($customdata['type'])) { // Fall back in case the customdata is not fully built.
@@ -1048,8 +1032,7 @@ if ($CFG->branch <= 403) {
      * This function is called to add JavaScript before the footer is rendered
      * when the page is a course view.
      */
-    function interactivevideo_before_footer()
-    {
+    function interactivevideo_before_footer() {
         global $PAGE;
         if (strpos($PAGE->bodyclasses, 'path-course-view') === false) {
             return;
@@ -1067,8 +1050,7 @@ if ($CFG->branch <= 403) {
  * @param mixed $grades Null to update all grades, false to delete all grades, or array of user grades.
  * @return void.
  */
-function interactivevideo_grade_item_update($moduleinstance, $grades = null)
-{
+function interactivevideo_grade_item_update($moduleinstance, $grades = null) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
 
@@ -1110,8 +1092,7 @@ function interactivevideo_grade_item_update($moduleinstance, $grades = null)
  * @param stdClass $moduleinstance Instance object.
  * @return grade_item.
  */
-function interactivevideo_grade_item_delete($moduleinstance)
-{
+function interactivevideo_grade_item_delete($moduleinstance) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
     if (!isset($moduleinstance->courseid)) {
@@ -1138,8 +1119,7 @@ function interactivevideo_grade_item_delete($moduleinstance)
  * @param stdClass $moduleinstance Instance object with extra cmidnumber and modname property.
  * @param int $userid Update grade of specific user only, 0 means all participants.
  */
-function interactivevideo_update_grades($moduleinstance, $userid = 0)
-{
+function interactivevideo_update_grades($moduleinstance, $userid = 0) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
     if ($moduleinstance->grade == 0) {
@@ -1159,8 +1139,7 @@ function interactivevideo_update_grades($moduleinstance, $userid = 0)
  * @param int $userid The user ID (optional).
  * @return array The user grades.
  */
-function interactivevideo_get_user_grades($moduleinstance, $userid = 0)
-{
+function interactivevideo_get_user_grades($moduleinstance, $userid = 0) {
     global $CFG, $DB;
     require_once($CFG->libdir . '/gradelib.php');
     // Get user grades from the grade_grades table with key as userid.
@@ -1189,8 +1168,7 @@ function interactivevideo_get_user_grades($moduleinstance, $userid = 0)
  * @param stdClass $data The module instance object.
  * @return array The status.
  */
-function interactivevideo_reset_userdata($data)
-{
+function interactivevideo_reset_userdata($data) {
     global $DB;
     $status = [];
     $resetcompletion = isset($data->reset_completion) && $data->reset_completion;
@@ -1268,8 +1246,7 @@ function interactivevideo_reset_userdata($data)
  *
  * @param mixed $arg
  */
-function interactivevideo_output_fragment_getcontent($arg)
-{
+function interactivevideo_output_fragment_getcontent($arg) {
     $prop = json_decode($arg['prop']);
     $class = $prop->class;
 
@@ -1284,8 +1261,7 @@ function interactivevideo_output_fragment_getcontent($arg)
  * Register the ability to handle drag and drop csv file which contains list of videos and details.
  * @return array containing details of the files / types the mod can handle
  */
-function interactivevideo_dndupload_register()
-{
+function interactivevideo_dndupload_register() {
     return ['files' => [
         ['extension' => 'csv', 'message' => get_string('createinteractivevideofromlist', 'mod_interactivevideo')],
     ]];
@@ -1299,8 +1275,7 @@ function interactivevideo_dndupload_register()
  * @return array containing information about the created interactive video(s)
  * @throws moodle_exception
  */
-function interactivevideo_dndupload_handle($uploadinfo, ?string $videodata = null, ?int $beforemod = null)
-{
+function interactivevideo_dndupload_handle($uploadinfo, ?string $videodata = null, ?int $beforemod = null) {
     global $USER, $DB, $CFG;
     if (!$videodata) {
         // First get the file content.
@@ -2088,8 +2063,7 @@ function interactivevideo_dndupload_handle($uploadinfo, ?string $videodata = nul
  *
  * @return array
  */
-function interactivevideo_default_appearance()
-{
+function interactivevideo_default_appearance() {
     return [
         'useoriginalvideocontrols' => 0,
         'hidemainvideocontrols' => 0,
@@ -2118,8 +2092,7 @@ function interactivevideo_default_appearance()
  * @param mixed $sections
  * @return void
  */
-function interactivevideo_appearanceandbehavior_form($mform, $current, $sections = ['appearance', 'behavior'])
-{
+function interactivevideo_appearanceandbehavior_form($mform, $current, $sections = ['appearance', 'behavior']) {
     global $CFG;
     if (in_array('appearance', $sections)) {
         $mform->addElement(
@@ -2652,8 +2625,7 @@ function mod_interactivevideo_core_calendar_provide_event_action(
  * @param stdClass $moduleinstance The module instance object.
  * @return bool
  */
-function interactivevideo_update_event($moduleinstance)
-{
+function interactivevideo_update_event($moduleinstance) {
     global $DB, $CFG;
     require_once($CFG->dirroot . '/calendar/lib.php');
 
@@ -2727,8 +2699,7 @@ function interactivevideo_update_event($moduleinstance)
  * @param stdClass $course The course to object for the report
  * @param context $context The context of the course
  */
-function interactivevideo_extend_navigation_course(\navigation_node $navigation, \stdClass $course, \context $context)
-{
+function interactivevideo_extend_navigation_course(\navigation_node $navigation, \stdClass $course, \context $context) {
     // Get enrolment instance.
     if (!has_capability('mod/interactivevideo:manage', $context)) {
         return;
@@ -2750,8 +2721,7 @@ function interactivevideo_extend_navigation_course(\navigation_node $navigation,
  * @param string $url The url of the video.
  * @return string The type of the video.
  */
-function interactivevideo_get_type_from_url($url)
-{
+function interactivevideo_get_type_from_url($url) {
     $patterns = [
         'yt' => '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)\/' .
             '(?:embed\/|watch\?v=|v\/|.+\?v=)?([^&\/\?]+)(?:[&\/\?].*)?/i',
