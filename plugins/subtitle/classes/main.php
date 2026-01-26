@@ -89,17 +89,22 @@ class main
             )->out();
         }
 
-        // We render a hidden container or specific interactive elements
-        // The actual display logic will be handled by JS reading the VTT file
-        // Pass the file URL in a data attribute
-        $showsubtitle = isset($arg['intg1']) && $arg['intg1'] == 1; // Storing visibility pref in intg1
+        // Debugging: List all files found
+        $debuginfo = "Debug Info: Context: $contextid, ID: $id, Area: content. Files found: " . count($files);
+        foreach ($files as $f) {
+            $debuginfo .= " | " . $f->get_filename() . " (" . $f->get_filesize() . ")";
+        }
+
+        $showsubtitle = isset($arg['intg1']) && $arg['intg1'] == 1;
 
         $content = '<div class="ivplugin-subtitle-container ' . ($showsubtitle ? '' : 'd-none') . '" 
                         data-subtitle-url="' . $fileurl . '" 
-                        data-show-subtitle="' . ($showsubtitle ? '1' : '0') . '">
+                        data-show-subtitle="' . ($showsubtitle ? '1' : '0') . '"
+                        data-debug-info="' . htmlspecialchars($debuginfo) . '">
                         <div class="subtitle-text p-2 text-center bg-dark text-white opacity-75 rounded">
                             <span class="iv-subtitle-current-text">...</span>
                         </div>
+                        <div style="display:none;" id="iv-subtitle-debug">' . $debuginfo . '</div> <!-- Hidden debug -->
                     </div>';
 
         return $content;

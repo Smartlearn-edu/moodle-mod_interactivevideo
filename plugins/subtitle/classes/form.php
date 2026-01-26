@@ -23,6 +23,7 @@ namespace ivplugin_subtitle;
  * @copyright  2024 Antigravity
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+// Initialized form for subtitle plugin
 class form extends \mod_interactivevideo\form\base_form
 {
     /**
