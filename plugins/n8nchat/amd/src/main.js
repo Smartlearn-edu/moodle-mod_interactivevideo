@@ -21,8 +21,8 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
          * Initialize the n8n chat widget
          */
         async initChat(annotation) {
-            const webhookUrl = annotation.webhookurl;
-            const welcomeMessage = annotation.welcomemessage;
+            const webhookUrl = annotation.text1;
+            const welcomeMessage = annotation.text2 || 'Welcome! How can I assist you today?';
 
             try {
                 // Dynamically import the n8n chat bundle
@@ -156,21 +156,6 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     }
                 };
 
-                // Maximize button
-                const maximizeBtn = document.createElement('button');
-                maximizeBtn.className = 'window-control-btn maximize';
-                maximizeBtn.innerHTML = '□';
-                maximizeBtn.title = 'Maximize';
-                maximizeBtn.style.cssText = btnStyle;
-                maximizeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    const chatWindow = header.closest('[class*="window"]') || header.closest('[class*="chat"]');
-                    if (chatWindow) {
-                        chatWindow.classList.toggle('chat-maximized');
-                        maximizeBtn.innerHTML = chatWindow.classList.contains('chat-maximized') ? 'NB' : '□';
-                    }
-                };
-
                 // Close button
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'window-control-btn close';
@@ -188,14 +173,13 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                 };
 
                 // Attach Events for Hover
-                [minimizeBtn, maximizeBtn, closeBtn].forEach(btn => {
+                [minimizeBtn, closeBtn].forEach(btn => {
                     btn.onmouseover = () => btn.style.background = 'rgba(255, 255, 255, 0.2) !important';
                     btn.onmouseout = () => btn.style.background = 'rgba(255, 255, 255, 0.1) !important';
                 });
 
                 // Add buttons to controls
                 controlsDiv.appendChild(minimizeBtn);
-                controlsDiv.appendChild(maximizeBtn);
                 controlsDiv.appendChild(closeBtn);
 
                 // Ensure header has relative positioning

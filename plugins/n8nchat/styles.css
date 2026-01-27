@@ -36,7 +36,7 @@ div[class*="Header"] {
 .chat-minimized {
   height: 50px !important;
   overflow: hidden !important;
-  bottom: 0 !important; 
+  bottom: 0 !important;
 }
 
 .chat-minimized .chat-messages,
@@ -46,18 +46,7 @@ div[class*="Header"] {
   display: none !important;
 }
 
-/* Maximized state */
-.chat-maximized {
-  width: 100vw !important;
-  height: 100vh !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  position: fixed !important;
-  z-index: 9999 !important;
-  border-radius: 0 !important;
-}
+
 
 /* Input Styling */
 .chat-input,

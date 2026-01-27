@@ -16,8 +16,6 @@
 
 namespace ivplugin_n8nchat;
 
-use mod_interactivevideo\local\pluginform;
-
 /**
  * Form for adding/editing a n8n Chat annotation.
  *
@@ -25,8 +23,24 @@ use mod_interactivevideo\local\pluginform;
  * @copyright  2024 Antigravity
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class form extends pluginform
+class form extends \mod_interactivevideo\form\base_form
 {
+
+    /**
+     * Sets data for dynamic submission
+     * @return void
+     */
+    public function set_data_for_dynamic_submission(): void
+    {
+        $data = $this->set_data_default();
+
+        // text1 = webhookurl
+        $data->text1 = $this->optional_param('text1', '', \PARAM_URL);
+        // text2 = welcomemessage
+        $data->text2 = $this->optional_param('text2', \get_string('welcomemessage_default', 'ivplugin_n8nchat'), \PARAM_TEXT);
+
+        $this->set_data($data);
+    }
 
     /**
      * Define the form fields
@@ -35,18 +49,25 @@ class form extends pluginform
     {
         $mform = $this->_form;
 
-        $mform->addElement('header', 'general', get_string('pluginname', 'ivplugin_n8nchat'));
+        // Add standard elements (time, duration, etc.)
+        $this->standard_elements();
 
-        // Webhook URL
-        $mform->addElement('text', 'webhookurl', get_string('webhookurl', 'ivplugin_n8nchat'));
-        $mform->setType('webhookurl', PARAM_URL);
-        $mform->addRule('webhookurl', null, 'required', null, 'client');
-        $mform->addHelpButton('webhookurl', 'webhookurl', 'ivplugin_n8nchat');
+        // Header
+        $mform->addElement('header', 'general', \get_string('pluginname', 'ivplugin_n8nchat'));
 
-        // Welcome Message (Optional)
-        $mform->addElement('text', 'welcomemessage', get_string('welcomemessage', 'ivplugin_n8nchat'));
-        $mform->setType('welcomemessage', PARAM_TEXT);
-        $mform->addHelpButton('welcomemessage', 'welcomemessage', 'ivplugin_n8nchat');
-        $mform->setDefault('welcomemessage', 'Welcome! How can I assist you today?');
+        // Webhook URL (mapped to text1 for storage)
+        $mform->addElement('text', 'text1', \get_string('webhookurl', 'ivplugin_n8nchat'));
+        $mform->setType('text1', \PARAM_URL);
+        $mform->addRule('text1', null, 'required', null, 'client');
+        $mform->addHelpButton('text1', 'webhookurl', 'ivplugin_n8nchat');
+
+        // Welcome Message (mapped to text2 for storage)
+        $mform->addElement('text', 'text2', \get_string('welcomemessage', 'ivplugin_n8nchat'));
+        $mform->setType('text2', \PARAM_TEXT);
+        $mform->addHelpButton('text2', 'welcomemessage', 'ivplugin_n8nchat');
+        $mform->setDefault('text2', 'Welcome! How can I assist you today?');
+
+        // Close form (standard buttons)
+        $this->close_form();
     }
 }
