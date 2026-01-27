@@ -1,9 +1,5 @@
 /* CSS Variables and Overrides for n8n Chat */
 :root {
-  --chat--window--width: 400px;
-  --chat--window--height: 600px;
-  --chat--window--right: 22px;
-  --chat--window--bottom: 80px;
   --chat--color--primary: #e74266;
   --chat--color--primary-shade-50: #f4e9ec;
   --chat--color--primary-shade-100: #e8d3d9;
@@ -20,18 +16,14 @@
   --chat--transition-duration: 0.15s;
 }
 
-/* Force correct sizing on the widget container */
-div[class*="chat-window"],
-div[class*="ChatWindow"],
-.n8n-chat-window {
-  width: var(--chat--window--width, 400px) !important;
-  height: var(--chat--window--height, 600px) !important;
-  max-width: 90vw !important;
-  max-height: 80vh !important;
-  right: var(--chat--window--right, 20px) !important;
-  bottom: var(--chat--window--bottom, 80px) !important;
-  position: fixed !important;
-  z-index: 10000 !important;
+/* Ensure the wrapper takes full space of the IV container */
+.ivplugin-n8nchat-placeholder {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: relative;
+  min-height: 400px;
+  /* Ensure visibility if container is auto-height */
 }
 
 /* Compact Header */
@@ -44,20 +36,6 @@ div[class*="Header"] {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-}
-
-/* Minimized state */
-.chat-minimized {
-  height: 50px !important;
-  overflow: hidden !important;
-  bottom: 0 !important;
-}
-
-.chat-minimized .chat-messages,
-.chat-minimized .chat-input-container,
-.chat-minimized [class*="messages"],
-.chat-minimized [class*="input"] {
-  display: none !important;
 }
 
 /* Input Styling */

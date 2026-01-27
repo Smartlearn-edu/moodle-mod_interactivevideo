@@ -23,10 +23,29 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
         async initChat(annotation) {
             const webhookUrl = annotation.text1;
             const welcomeMessage = annotation.text2 || 'Welcome! How can I assist you today?';
-            const containerId = 'n8n-chat-wrapper-' + annotation.id;
+
+            // Find the container created by classes/main.php (get_content)
+            // It is usually wrapped by the Interactive Video module in a div with specific positioning classes (popup, drawer, etc.)
+            // We look for our placeholder inside the annotation's unique container.
+            const placeholderSelector = `.ivplugin-n8nchat-placeholder`;
+            // Base class usually provides a way to get the container, but we can look it up via DOM with the annotation ID.
+            // The standard IV structure is usually #message[data-id="..."] or similar.
+            // However, our placeholder is unique enough if scoped to the annotation.
+
+            // We use jQuery here as the Base class implies it's available and commonly used in Moodle plugins
+            const $container = $(`div[data-id="${annotation.id}"]`).find(placeholderSelector);
+
+            if ($container.length === 0) {
+                console.error('n8n Chat: Container not found for annotation', annotation.id);
+                return;
+            }
+
+            // Generate a unique ID for the target element *inside* our placeholder
+            const targetId = 'n8n-chat-target-' + annotation.id;
+            // Clear placeholder content and set the ID
+            $container.html(`<div id="${targetId}" style="width: 100%; height: 100%; min-height: 400px; position: relative;"></div>`);
 
             try {
-                // Dynamically import the n8n chat bundle
                 const module = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
                 const createChat = module.createChat;
 
@@ -38,36 +57,20 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     effectiveCourseId = urlParams.get('id');
                 }
 
-                // Create a dedicated wrapper with STRICT sizing
-                if (!document.getElementById(containerId)) {
-                    const wrapper = document.createElement('div');
-                    wrapper.id = containerId;
-                    wrapper.style.cssText = `
-                        position: fixed !important;
-                        bottom: 80px !important;
-                        right: 20px !important;
-                        width: 400px !important;
-                        height: 600px !important;
-                        max-width: 90vw !important;
-                        max-height: 80vh !important;
-                        z-index: 99999 !important;
-                        background: transparent !important;
-                        box-shadow: none !important;
-                        pointer-events: none; /* Let events pass through transparency, but children will re-enable */
-                    `;
-                    document.body.appendChild(wrapper);
-                }
-
                 createChat({
                     webhookUrl: webhookUrl,
-                    mode: 'window',
+                    mode: 'fullscreen', // We use fullscreen relative to the TARGET container
                     chatInputKey: 'chatInput',
                     chatSessionKey: 'sessionId_iv_' + annotation.id,
                     loadPreviousSession: true,
                     showWelcomeScreen: true,
+                    title: annotation.title || 'AI Assistant', // Fixes 'null' header
                     initialMessages: [
                         welcomeMessage
                     ],
+                    onSessionStart: () => {
+                        // Optional: Handle session start
+                    },
                     defaultLanguage: 'en',
                     metadata: {
                         userId: userId,
@@ -77,161 +80,44 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                         pageUrl: window.location.href,
                         timestamp: new Date().toISOString()
                     },
-                    target: '#' + containerId
+                    target: '#' + targetId
                 });
 
                 console.log('n8n Chat loaded for IV Annotation', annotation.id);
 
-                // Add window controls and customization
-                this.addWindowControls(containerId);
-                this.applyCustomStyles();
-
-                // Ensure wrapper content has pointer events
-                const wrapper = document.getElementById(containerId);
-                if (wrapper) {
-                    const children = wrapper.children;
-                    for (let child of children) {
-                        child.style.pointerEvents = 'auto';
-                    }
+                // Inject styles to ensure the widget fills the container but doesn't overflow fixed
+                // We scope it to the target ID
+                const styleId = 'n8n-chat-style-' + annotation.id;
+                if (!document.getElementById(styleId)) {
+                    const style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = `
+                        #${targetId} .n8n-chat-widget,
+                        #${targetId} .chat-window {
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            bottom: 0 !important;
+                            width: 100% !important;
+                            height: 100% !important;
+                            border-radius: 0 !important; 
+                            box-shadow: none !important;
+                            z-index: 1 !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
                 }
 
-                // Monitor DOM
-                const observer = new MutationObserver(() => {
-                    this.addWindowControls(containerId);
-                    // Re-assert pointer events on new children
-                    const wrapper = document.getElementById(containerId);
-                    if (wrapper) {
-                        const children = wrapper.children;
-                        for (let child of children) {
-                            child.style.pointerEvents = 'auto';
-                        }
-                    }
-                });
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
+                // Hide custom styles that force fixed positioning if they exist from previous steps
+                const globalStyle = document.getElementById('ivplugin-n8nchat-styles');
+                if (globalStyle) {
+                    // We might want to keep basic styles but disable the fixed window override
+                    // Ideally, we should update styles.css to be less aggressive now that we use embedded mode
+                }
 
             } catch (error) {
                 console.error('Error loading n8n chat widget:', error);
-            }
-        }
-
-        addWindowControls(containerId) {
-            // Find header WITHIN our container if possible, or broadly if needed
-            const wrapper = document.getElementById(containerId);
-            if (!wrapper) return;
-
-            // Try to find the chat root inside the wrapper
-            // The widget likely appends itself inside the target
-
-            const selectors = [
-                'div[class*="Header"]',
-                '.chat-header',
-                '[class*="chat-header"]',
-                'div[class*="header"]',
-                'header'
-            ];
-
-            let header = null;
-            // First look strictly inside wrapper
-            for (const selector of selectors) {
-                const elements = wrapper.querySelectorAll(selector);
-                if (elements.length > 0) {
-                    header = elements[0];
-                    break;
-                }
-            }
-
-            if (header && !header.dataset.controlsAdded) {
-                const controlsDiv = document.createElement('div');
-                controlsDiv.className = 'window-controls';
-                controlsDiv.style.cssText = `
-                    display: flex !important;
-                    gap: 8px !important;
-                    margin-left: auto !important;
-                    z-index: 10000 !important;
-                    position: absolute !important;
-                    right: 16px !important;
-                    top: 50% !important;
-                    transform: translateY(-50%) !important;
-                    pointer-events: auto !important;
-                `;
-
-                const btnStyle = `
-                    width: 32px !important;
-                    height: 32px !important;
-                    border: none !important;
-                    background: rgba(255, 255, 255, 0.1) !important;
-                    color: white !important;
-                    cursor: pointer !important;
-                    border-radius: 4px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 18px !important;
-                    font-weight: bold !important;
-                `;
-
-                // Minimize button
-                const minimizeBtn = document.createElement('button');
-                minimizeBtn.className = 'window-control-btn minimize';
-                minimizeBtn.innerHTML = '−';
-                minimizeBtn.title = 'Minimize';
-                minimizeBtn.style.cssText = btnStyle;
-                minimizeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    // Toggle visibility of the WRAPPER instead of internal classes
-                    if (wrapper.style.height === '50px') {
-                        // Restore
-                        wrapper.style.height = '600px';
-                        wrapper.style.overflow = 'visible';
-                        minimizeBtn.innerHTML = '−';
-                    } else {
-                        // Minimize
-                        wrapper.style.height = '50px';
-                        wrapper.style.overflow = 'hidden';
-                        minimizeBtn.innerHTML = '+';
-                    }
-                };
-
-                // Close button
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'window-control-btn close';
-                closeBtn.innerHTML = '×';
-                closeBtn.title = 'Close';
-                closeBtn.style.cssText = btnStyle;
-                closeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    wrapper.style.display = 'none';
-                    // Attempt to show launcher if it exists, though in this mode we might not have one externally
-                };
-
-                [minimizeBtn, closeBtn].forEach(btn => {
-                    btn.onmouseover = () => btn.style.background = 'rgba(255, 255, 255, 0.2) !important';
-                    btn.onmouseout = () => btn.style.background = 'rgba(255, 255, 255, 0.1) !important';
-                });
-
-                controlsDiv.appendChild(minimizeBtn);
-                controlsDiv.appendChild(closeBtn);
-
-                header.style.position = 'relative';
-                header.appendChild(controlsDiv);
-                header.dataset.controlsAdded = 'true';
-            }
-        }
-
-        replaceIcon() {
-            // Optional icon replacement
-        }
-
-        applyCustomStyles() {
-            if (!document.getElementById('ivplugin-n8nchat-styles')) {
-                const link = document.createElement('link');
-                link.id = 'ivplugin-n8nchat-styles';
-                link.rel = 'stylesheet';
-                link.href = M.cfg.wwwroot + '/mod/interactivevideo/plugins/n8nchat/styles.css';
-                document.head.appendChild(link);
             }
         }
     };

@@ -67,6 +67,9 @@ class form extends \mod_interactivevideo\form\base_form
         $mform->addHelpButton('text2', 'welcomemessage', 'ivplugin_n8nchat');
         $mform->setDefault('text2', 'Welcome! How can I assist you today?');
 
+        // Allow display options (popup, side, etc.)
+        $this->display_options_field('side');
+
         // Close form (standard buttons)
         $this->close_form();
     }

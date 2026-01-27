@@ -52,9 +52,34 @@ class main extends \ivplugin_richtext\main
      */
     public function get_content($arg)
     {
+        global $PAGE, $DB;
+
+        // Default values
+        $sectionName = '';
+        $activityName = '';
+        $cmid = 0;
+
+        if (isset($PAGE->cm->id)) {
+            $cmid = $PAGE->cm->id;
+            // Try to get section name
+            $modinfo = get_fast_modinfo($PAGE->course);
+            $cm = $modinfo->get_cm($cmid);
+            if ($cm) {
+                $activityName = $cm->name;
+                $section = $modinfo->get_section_info($cm->sectionnum);
+                $sectionName = $section->name ?? '';
+                if (!$sectionName && $section->section == 0) {
+                    $sectionName = get_string('general');
+                }
+            }
+        }
+
         // We render a minimal placeholder because the JS will append the chat widget to the body.
-        // However, the editor needs something to "see".
-        return '<div class="ivplugin-n8nchat-placeholder d-flex align-items-center justify-content-center p-3 border rounded bg-light text-muted">
+        // However, the editor needs something to "see", and we treat this as the data transport.
+        return '<div class="ivplugin-n8nchat-placeholder d-flex align-items-center justify-content-center p-3 border rounded bg-light text-muted"
+                     data-defaults-section="' . s($sectionName) . '"
+                     data-defaults-activity="' . s($activityName) . '"
+                     data-defaults-cmid="' . s($cmid) . '">
                     <i class="bi bi-robot fs-1 me-2"></i>
                     <div>
                         <strong>' . get_string('pluginname', 'ivplugin_n8nchat') . '</strong><br>
