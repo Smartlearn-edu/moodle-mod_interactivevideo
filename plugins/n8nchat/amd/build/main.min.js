@@ -51,6 +51,16 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
             // Clear placeholder content and set the ID
             $container.html(`<div id="${targetId}" style="width: 100%; height: 100%; min-height: 400px; position: relative;"></div>`);
 
+            // Inject n8n chat styles from CDN
+            const cssId = 'n8n-chat-css-' + annotation.id;
+            if (!document.getElementById(cssId)) {
+                const link = document.createElement('link');
+                link.id = cssId;
+                link.rel = 'stylesheet';
+                link.href = 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css';
+                document.head.appendChild(link);
+            }
+
             try {
                 const module = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
                 const createChat = module.createChat;
@@ -63,6 +73,12 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     effectiveCourseId = urlParams.get('id');
                 }
 
+                // Robust title handling
+                let chatTitle = 'AI Assistant';
+                if (annotation.title && annotation.title !== 'null') {
+                    chatTitle = annotation.title;
+                }
+
                 createChat({
                     webhookUrl: webhookUrl,
                     mode: 'fullscreen', // We use fullscreen relative to the TARGET container
@@ -70,7 +86,7 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     chatSessionKey: 'sessionId_iv_' + annotation.id,
                     loadPreviousSession: true,
                     showWelcomeScreen: true,
-                    title: annotation.title || 'AI Assistant',
+                    title: chatTitle,
                     initialMessages: [
                         welcomeMessage
                     ],
