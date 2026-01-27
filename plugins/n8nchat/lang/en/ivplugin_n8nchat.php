@@ -27,3 +27,4 @@ $string['webhookurl'] = 'Webhook URL';
 $string['webhookurl_desc'] = 'The n8n webhook URL to connect the chat to.';
 $string['welcomemessage'] = 'Welcome Message';
 $string['welcomemessage_desc'] = 'Initial message displayed to the user.';
+$string['welcomemessage_default'] = 'Welcome! How can I assist you on this course?';

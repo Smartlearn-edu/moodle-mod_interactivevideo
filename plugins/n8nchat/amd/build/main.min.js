@@ -23,29 +23,46 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
         async initChat(annotation) {
             const webhookUrl = annotation.text1;
             const welcomeMessage = annotation.text2 || 'Welcome! How can I assist you today?';
+            const containerId = 'n8n-chat-wrapper-' + annotation.id;
 
             try {
                 // Dynamically import the n8n chat bundle
-                // Note: We use dynamic import which is supported in modern browsers.
-                // If this fails in older environments, we might need a script tag fallback.
                 const module = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
                 const createChat = module.createChat;
 
-                const courseId = M.cfg.courseId; // Sometimes available
+                const courseId = M.cfg.courseId;
                 const userId = M.cfg.userId || 'guest';
-
-                // Attempt to get course ID from URL if not in cfg
                 let effectiveCourseId = courseId;
                 if (!effectiveCourseId) {
                     const urlParams = new URLSearchParams(window.location.search);
                     effectiveCourseId = urlParams.get('id');
                 }
 
+                // Create a dedicated wrapper with STRICT sizing
+                if (!document.getElementById(containerId)) {
+                    const wrapper = document.createElement('div');
+                    wrapper.id = containerId;
+                    wrapper.style.cssText = `
+                        position: fixed !important;
+                        bottom: 80px !important;
+                        right: 20px !important;
+                        width: 400px !important;
+                        height: 600px !important;
+                        max-width: 90vw !important;
+                        max-height: 80vh !important;
+                        z-index: 99999 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        pointer-events: none; /* Let events pass through transparency, but children will re-enable */
+                    `;
+                    document.body.appendChild(wrapper);
+                }
+
                 createChat({
                     webhookUrl: webhookUrl,
                     mode: 'window',
                     chatInputKey: 'chatInput',
-                    chatSessionKey: 'sessionId_iv_' + annotation.id, // Unique session per annotation
+                    chatSessionKey: 'sessionId_iv_' + annotation.id,
                     loadPreviousSession: true,
                     showWelcomeScreen: true,
                     initialMessages: [
@@ -60,19 +77,35 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                         pageUrl: window.location.href,
                         timestamp: new Date().toISOString()
                     },
-                    target: 'body' // Important: Append to body to overlay over everything
+                    target: '#' + containerId
                 });
 
                 console.log('n8n Chat loaded for IV Annotation', annotation.id);
 
                 // Add window controls and customization
-                this.addWindowControls();
+                this.addWindowControls(containerId);
                 this.applyCustomStyles();
 
-                // Monitor DOM changes for dynamically loaded elements within the chat shadow/iframe
+                // Ensure wrapper content has pointer events
+                const wrapper = document.getElementById(containerId);
+                if (wrapper) {
+                    const children = wrapper.children;
+                    for (let child of children) {
+                        child.style.pointerEvents = 'auto';
+                    }
+                }
+
+                // Monitor DOM
                 const observer = new MutationObserver(() => {
-                    this.addWindowControls();
-                    this.replaceIcon();
+                    this.addWindowControls(containerId);
+                    // Re-assert pointer events on new children
+                    const wrapper = document.getElementById(containerId);
+                    if (wrapper) {
+                        const children = wrapper.children;
+                        for (let child of children) {
+                            child.style.pointerEvents = 'auto';
+                        }
+                    }
                 });
                 observer.observe(document.body, {
                     childList: true,
@@ -84,8 +117,14 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
             }
         }
 
-        addWindowControls() {
-            // Try multiple selector strategies to find the header
+        addWindowControls(containerId) {
+            // Find header WITHIN our container if possible, or broadly if needed
+            const wrapper = document.getElementById(containerId);
+            if (!wrapper) return;
+
+            // Try to find the chat root inside the wrapper
+            // The widget likely appends itself inside the target
+
             const selectors = [
                 'div[class*="Header"]',
                 '.chat-header',
@@ -94,28 +133,19 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                 'header'
             ];
 
-            // We need to look carefully because the chat might render differently
             let header = null;
+            // First look strictly inside wrapper
             for (const selector of selectors) {
-                const elements = document.querySelectorAll(selector);
-                for (const el of elements) {
-                    // Heuristic: Check if this looks like our chat header
-                    if (el.textContent.includes('AI Assistant') ||
-                        el.closest('[class*="window"]') ||
-                        el.closest('[class*="chat"]')) {
-                        header = el;
-                        break;
-                    }
+                const elements = wrapper.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    header = elements[0];
+                    break;
                 }
-                if (header) break;
             }
 
             if (header && !header.dataset.controlsAdded) {
-
-                // Create controls container
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'window-controls';
-                // Styles are applied via CSS file where possible, but inline ensures priority over widget styles
                 controlsDiv.style.cssText = `
                     display: flex !important;
                     gap: 8px !important;
@@ -125,6 +155,7 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     right: 16px !important;
                     top: 50% !important;
                     transform: translateY(-50%) !important;
+                    pointer-events: auto !important;
                 `;
 
                 const btnStyle = `
@@ -150,9 +181,17 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                 minimizeBtn.style.cssText = btnStyle;
                 minimizeBtn.onclick = (e) => {
                     e.stopPropagation();
-                    const chatWindow = header.closest('[class*="window"]') || header.closest('[class*="chat"]');
-                    if (chatWindow) {
-                        chatWindow.classList.toggle('chat-minimized');
+                    // Toggle visibility of the WRAPPER instead of internal classes
+                    if (wrapper.style.height === '50px') {
+                        // Restore
+                        wrapper.style.height = '600px';
+                        wrapper.style.overflow = 'visible';
+                        minimizeBtn.innerHTML = '−';
+                    } else {
+                        // Minimize
+                        wrapper.style.height = '50px';
+                        wrapper.style.overflow = 'hidden';
+                        minimizeBtn.innerHTML = '+';
                     }
                 };
 
@@ -164,35 +203,26 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                 closeBtn.style.cssText = btnStyle;
                 closeBtn.onclick = (e) => {
                     e.stopPropagation();
-                    const chatWindow = header.closest('[class*="window"]') || header.closest('[class*="chat"]');
-                    if (chatWindow) {
-                        chatWindow.style.display = 'none';
-                    }
-                    const launcher = document.querySelector('button[class*="launcher"], .chat-window-toggle');
-                    if (launcher) launcher.style.display = 'flex';
+                    wrapper.style.display = 'none';
+                    // Attempt to show launcher if it exists, though in this mode we might not have one externally
                 };
 
-                // Attach Events for Hover
                 [minimizeBtn, closeBtn].forEach(btn => {
                     btn.onmouseover = () => btn.style.background = 'rgba(255, 255, 255, 0.2) !important';
                     btn.onmouseout = () => btn.style.background = 'rgba(255, 255, 255, 0.1) !important';
                 });
 
-                // Add buttons to controls
                 controlsDiv.appendChild(minimizeBtn);
                 controlsDiv.appendChild(closeBtn);
 
-                // Ensure header has relative positioning
                 header.style.position = 'relative';
-
-                // Add controls to header
                 header.appendChild(controlsDiv);
                 header.dataset.controlsAdded = 'true';
             }
         }
 
         replaceIcon() {
-            // Replace launcher button icon if needed, can be customized via CSS too
+            // Optional icon replacement
         }
 
         applyCustomStyles() {
