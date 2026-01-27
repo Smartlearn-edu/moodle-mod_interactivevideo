@@ -28,16 +28,22 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
             // It is usually wrapped by the Interactive Video module in a div with specific positioning classes (popup, drawer, etc.)
             // We look for our placeholder inside the annotation's unique container.
             const placeholderSelector = `.ivplugin-n8nchat-placeholder`;
-            // Base class usually provides a way to get the container, but we can look it up via DOM with the annotation ID.
-            // The standard IV structure is usually #message[data-id="..."] or similar.
-            // However, our placeholder is unique enough if scoped to the annotation.
-
-            // We use jQuery here as the Base class implies it's available and commonly used in Moodle plugins
             const $container = $(`div[data-id="${annotation.id}"]`).find(placeholderSelector);
 
             if ($container.length === 0) {
                 console.error('n8n Chat: Container not found for annotation', annotation.id);
                 return;
+            }
+
+            // Extract context data from data attributes
+            const sectionName = $container.data('defaults-section') || '';
+            const activityName = $container.data('defaults-activity') || '';
+            const cmid = $container.data('defaults-cmid') || '';
+
+            // Get current video time (if player is available)
+            let currentVideoTime = 0;
+            if (this.player && typeof this.player.getCurrentTime === 'function') {
+                currentVideoTime = await this.player.getCurrentTime();
             }
 
             // Generate a unique ID for the target element *inside* our placeholder
@@ -64,7 +70,7 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     chatSessionKey: 'sessionId_iv_' + annotation.id,
                     loadPreviousSession: true,
                     showWelcomeScreen: true,
-                    title: annotation.title || 'AI Assistant', // Fixes 'null' header
+                    title: annotation.title || 'AI Assistant',
                     initialMessages: [
                         welcomeMessage
                     ],
@@ -78,7 +84,11 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                         annotationId: annotation.id,
                         courseId: effectiveCourseId,
                         pageUrl: window.location.href,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        sectionName: sectionName,
+                        activityName: activityName,
+                        activityId: cmid, // Interactive Video ID (CMID)
+                        currentVideoTime: currentVideoTime
                     },
                     target: '#' + targetId
                 });
@@ -107,13 +117,6 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                         }
                     `;
                     document.head.appendChild(style);
-                }
-
-                // Hide custom styles that force fixed positioning if they exist from previous steps
-                const globalStyle = document.getElementById('ivplugin-n8nchat-styles');
-                if (globalStyle) {
-                    // We might want to keep basic styles but disable the fixed window override
-                    // Ideally, we should update styles.css to be less aggressive now that we use embedded mode
                 }
 
             } catch (error) {
