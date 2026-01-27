@@ -55,3 +55,66 @@ textarea[class*="chat-input"]:focus,
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(231, 66, 102, 0.1) !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                        Message Alignment & Bubbles                         */
+/* -------------------------------------------------------------------------- */
+
+/* Container for messages */
+[class*="chat-message-list"],
+.chat-message-list {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 10px !important;
+  gap: 10px !important;
+}
+
+/* Generic Message Wrapper */
+[class*="chat-message-row"],
+.chat-message-row {
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 8px !important;
+}
+
+/* USER MESSAGES: Right Aligned, Green/Primary Color */
+[class*="chat-message-row"][class*="user"],
+.chat-message-row.user,
+.chat-message-user {
+  justify-content: flex-end !important;
+}
+
+[class*="chat-message-row"][class*="user"] [class*="chat-message-bubble"],
+.chat-message-user [class*="chat-message-bubble"],
+[class*="chat-bubble"][class*="user"] {
+  background-color: var(--chat--color--primary) !important;
+  /* Moodle Pink/Red */
+  color: #fff !important;
+  border-radius: 12px 12px 0 12px !important;
+  text-align: right !important;
+  max-width: 80% !important;
+}
+
+/* USER TEXT in bubble */
+[class*="chat-message-row"][class*="user"] p,
+[class*="chat-message-row"][class*="user"] span {
+  color: #fff !important;
+}
+
+
+/* BOT MESSAGES: Left Aligned, White/Gray */
+[class*="chat-message-row"][class*="bot"],
+.chat-message-row.bot,
+.chat-message-bot {
+  justify-content: flex-start !important;
+}
+
+[class*="chat-message-row"][class*="bot"] [class*="chat-message-bubble"],
+.chat-message-bot [class*="chat-message-bubble"],
+[class*="chat-bubble"][class*="bot"] {
+  background-color: #f0f2f5 !important;
+  color: #1f2933 !important;
+  border-radius: 12px 12px 12px 0 !important;
+  max-width: 80% !important;
+  border: 1px solid #e5e7eb !important;
+}
