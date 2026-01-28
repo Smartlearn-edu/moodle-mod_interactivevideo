@@ -40,10 +40,17 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
             const activityName = $container.data('defaults-activity') || '';
             const cmid = $container.data('defaults-cmid') || '';
 
-            // Get current video time (if player is available)
-            let currentVideoTime = 0;
+            // Start tracking video time
+            this.currentVideoTime = 0;
             if (this.player && typeof this.player.getCurrentTime === 'function') {
-                currentVideoTime = await this.player.getCurrentTime();
+                // Poll for time every second since getCurrentTime is async
+                this.timeTrackerInterval = setInterval(async () => {
+                    try {
+                        this.currentVideoTime = await this.player.getCurrentTime();
+                    } catch (e) {
+                        // Ignore errors if player is not ready
+                    }
+                }, 1000);
             }
 
             // Generate a unique ID for the target element *inside* our placeholder
@@ -79,6 +86,27 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     chatTitle = annotation.title;
                 }
 
+                // Create metadata object with getter for dynamic time
+                const metadata = {
+                    userId: userId,
+                    source: 'moodle_interactivevideo',
+                    annotationId: annotation.id,
+                    courseId: effectiveCourseId,
+                    pageUrl: window.location.href,
+                    timestamp: new Date().toISOString(),
+                    sectionName: sectionName,
+                    activityName: activityName,
+                    activityId: cmid
+                };
+
+                // Define getter for currentVideoTime to return the tracked value
+                Object.defineProperty(metadata, 'currentVideoTime', {
+                    get: () => {
+                        return this.currentVideoTime;
+                    },
+                    enumerable: true
+                });
+
                 createChat({
                     webhookUrl: webhookUrl,
                     mode: 'fullscreen', // We use fullscreen relative to the TARGET container
@@ -94,18 +122,7 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                         // Optional: Handle session start
                     },
                     defaultLanguage: 'en',
-                    metadata: {
-                        userId: userId,
-                        source: 'moodle_interactivevideo',
-                        annotationId: annotation.id,
-                        courseId: effectiveCourseId,
-                        pageUrl: window.location.href,
-                        timestamp: new Date().toISOString(),
-                        sectionName: sectionName,
-                        activityName: activityName,
-                        activityId: cmid, // Interactive Video ID (CMID)
-                        currentVideoTime: currentVideoTime
-                    },
+                    metadata: metadata,
                     target: '#' + targetId
                 });
 
