@@ -1,0 +1,187 @@
+{
+  "name": "Upload To Qdrant-G select video trans",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "select files",
+        "formDescription": "Select Video Transcript File",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "courseid",
+              "fieldType": "number",
+              "placeholder": "22"
+            },
+            {
+              "fieldLabel": "Section Name",
+              "placeholder": "chapter A"
+            },
+            {
+              "fieldLabel": "Video  Name",
+              "placeholder": "Introduction To Python"
+            },
+            {
+              "fieldLabel": "transcriot"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -1200,
+        192
+      ],
+      "id": "fa618e41-f509-44de-be6a-fdeea81783ca",
+      "name": "Add files to RAG",
+      "webhookId": "0abbf468-cb9e-471c-814a-985dd6eac3ea"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "videos22",
+          "mode": "list",
+          "cachedResultName": "videos22"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        192
+      ],
+      "id": "32bf07f9-1471-421d-bcad-44f0e3957ce0",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "s4jrROhwuxPhX8FO",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        416
+      ],
+      "id": "2e0f80a6-251e-4062-bbb6-39687d67740e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "nStCOKdJcuY7pjXx",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 10000,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        496
+      ],
+      "id": "6e1b1eb4-41ae-488f-b8a5-17bf93921271",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "courseid",
+                "value": "={{ $json.courseid }}"
+              },
+              {
+                "name": "video name",
+                "value": "={{ $json['Video  Name'] }}"
+              },
+              {
+                "name": "section name",
+                "value": "={{ $json['Section Name'] }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        352
+      ],
+      "id": "b77952cf-622b-4b06-bc07-13aec8beaf28",
+      "name": "Default Data Loader1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Add files to RAG": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c2ffd7e-2d4b-4888-88dd-cd33684e600e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7f2f1fefad3ef3242d9c8429d32eaeca0a83971269869040159e7ee0c11d2f0d"
+  },
+  "id": "uA9vxNdRgdXIVTBD",
+  "tags": []
+}

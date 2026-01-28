@@ -419,8 +419,9 @@ define([
                         completionpercentage, gradeiteminstance, grademax, vtype, preventskip,
                         totaltime, start, end, cmid, token, completionid);
 
-                    // Auto-run "always on" interactions like aichat
-                    const alwaysOn = releventAnnotations.filter(x => x.type === 'aichat');
+
+                    // Auto-run "always on" interactions like aichat and n8nchat
+                    const alwaysOn = releventAnnotations.filter(x => x.type === 'aichat' || x.type === 'n8nchat');
                     if (alwaysOn.length > 0) {
                         for (const anno of alwaysOn) {
                             runInteraction(anno, false, true);
