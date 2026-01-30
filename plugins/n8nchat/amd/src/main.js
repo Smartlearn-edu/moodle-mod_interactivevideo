@@ -81,10 +81,7 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                 }
 
                 // Robust title handling
-                let chatTitle = 'AI Assistant';
-                if (annotation.title && annotation.title !== 'null') {
-                    chatTitle = annotation.title;
-                }
+                let chatTitle = 'Chat With Video ';
 
                 // Create metadata object with getter for dynamic time
                 const metadata = {
