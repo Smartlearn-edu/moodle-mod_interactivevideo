@@ -55,6 +55,12 @@ class form extends \mod_interactivevideo\form\base_form
         // Header
         $mform->addElement('header', 'general', \get_string('pluginname', 'ivplugin_n8nchat'));
 
+        // Title
+        $mform->addElement('text', 'title', \get_string('title', 'mod_interactivevideo'));
+        $mform->setType('title', \PARAM_TEXT);
+        $mform->addRule('title', null, 'required', null, 'client');
+        $mform->setDefault('title', 'Chat With Video');
+
         // Webhook URL (mapped to text1 for storage)
         $mform->addElement('text', 'text1', \get_string('webhookurl', 'ivplugin_n8nchat'));
         $mform->setType('text1', \PARAM_URL);
