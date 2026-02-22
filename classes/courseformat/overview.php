@@ -194,7 +194,11 @@ class overview extends \core_courseformat\activityoverviewbase {
                 WHERE c.cmid = :cmid AND c.userid = :userid", ['cmid' => $this->cm->instance, 'userid' => $USER->id]);
 
         if (empty($xp)) {
-            return null;
+            return new overviewitem(
+                get_string('xp', 'mod_interactivevideo'),
+                '-',
+                '-'
+            );
         }
 
         return new overviewitem(
@@ -219,7 +223,11 @@ class overview extends \core_courseformat\activityoverviewbase {
                 WHERE c.cmid = :cmid AND c.userid = :userid", ['cmid' => $this->cm->instance, 'userid' => $USER->id]);
 
         if (empty($completion)) {
-            return null;
+            return new overviewitem(
+                get_string('completionpercentage', 'mod_interactivevideo'),
+                '-',
+                '-'
+            );
         }
 
         return new overviewitem(
@@ -263,7 +271,11 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         if (count($this->ivitems) == 0) {
-            return null;
+            return new overviewitem(
+                get_string('studentscompleted', 'mod_interactivevideo'),
+                '-',
+                '-'
+            );
         }
 
         global $DB;
