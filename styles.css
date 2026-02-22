@@ -2342,11 +2342,11 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-view #caption-dropdown {
-    max-height: 400px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 1);
     overflow-x: hidden;
+    max-height: 250px;
 }
 
 .path-mod-interactivevideo .alternative #wrapper #taskinfo {

@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2] - 2026-02-22
+https://mod-interactive-video.canny.io/changelog/interactive-video-v162
+
 ## [1.6.1] - 2026-02-11
 https://mod-interactive-video.canny.io/changelog/interactive-video-16-1
 
