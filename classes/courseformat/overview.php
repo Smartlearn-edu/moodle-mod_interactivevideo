@@ -47,80 +47,6 @@ class overview extends \core_courseformat\activityoverviewbase {
     ) {
         global $DB;
         parent::__construct($cm);
-        $customdata = $cm->get_custom_data();
-        $startend = explode('-', $customdata['startendtime']);
-        $interactivevideo = [
-            'id' => $cm->instance,
-            'name' => $cm->name,
-            'starttime' => $startend[0],
-            'endtime' => $startend[1],
-            'type' => $customdata['type'],
-            'completionpercentage' => isset($customdata['customcompletionrules'])
-                ? $customdata['customcompletionrules']['completionpercentage'] : 0,
-        ];
-
-        $interactivevideo = (object) $interactivevideo;
-        $contenttypes = get_config('mod_interactivevideo', 'enablecontenttypes');
-        $enabledcontenttypes = explode(',', $contenttypes);
-        $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
-
-        $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
-
-        $items = $cache->get($cm->instance);
-        if (empty($items)) {
-            $items = $DB->get_records(
-                'interactivevideo_items',
-                ['annotationid' => $cm->instance]
-            );
-            $cache->set($cm->instance, $items);
-        }
-        // What if $enabedcontenttypes changes.
-        if (!$items || empty($items)) {
-            $this->ivitems = [];
-            return;
-        }
-
-        $items = array_filter($items, function ($item) use ($contenttypes) {
-            return strpos($contenttypes, $item->type) !== false;
-        });
-
-        $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
-            return (($item->timestamp >= $interactivevideo->starttime
-                && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
-                && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
-        });
-
-        if (!$includeanalytics) {
-            $relevantitems = array_filter($relevantitems, function ($item) {
-                return $item->type != 'analytics';
-            });
-        }
-
-        $skipsegment = array_filter($relevantitems, function ($item) {
-            return $item->type === 'skipsegment';
-        });
-
-        $analytics = array_filter($relevantitems, function ($item) {
-            return $item->type === 'analytics';
-        });
-        $analytics = reset($analytics);
-
-        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
-            foreach ($skipsegment as $ss) {
-                if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title && $item->timestamp >= 0) {
-                    return false;
-                }
-            }
-            if ($item->type === 'skipsegment') {
-                return false;
-            }
-            if ($item->type === 'analytics' && $item->hascompletion != 1) {
-                return false;
-            }
-            return true;
-        });
-
-        $this->ivitems = $relevantitems;
     }
 
     #[\Override]
@@ -214,9 +140,86 @@ class overview extends \core_courseformat\activityoverviewbase {
      * @return overviewitem|null An overview item or null if the user lacks the required capability.
      */
     private function get_extra_interactions(): ?overviewitem {
-        if (!has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
+        if (has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
             return null;
         }
+        global $DB;
+        $cm = $this->cm;
+
+        $customdata = $cm->get_custom_data();
+        $startend = explode('-', $customdata['startendtime']);
+        $interactivevideo = [
+            'id' => $cm->instance,
+            'name' => $cm->name,
+            'starttime' => $startend[0],
+            'endtime' => $startend[1],
+            'type' => $customdata['type'],
+            'completionpercentage' => isset($customdata['customcompletionrules'])
+                ? $customdata['customcompletionrules']['completionpercentage'] : 0,
+        ];
+
+        $interactivevideo = (object) $interactivevideo;
+        $contenttypes = get_config('mod_interactivevideo', 'enablecontenttypes');
+        $enabledcontenttypes = explode(',', $contenttypes);
+        $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
+
+        $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
+
+        $items = $cache->get($cm->instance);
+        if (empty($items)) {
+            $items = $DB->get_records(
+                'interactivevideo_items',
+                ['annotationid' => $cm->instance]
+            );
+            $cache->set($cm->instance, $items);
+        }
+        // What if $enabedcontenttypes changes.
+        if (!$items || empty($items)) {
+            $this->ivitems = [];
+            return null;
+        }
+
+        $items = array_filter($items, function ($item) use ($contenttypes) {
+            return strpos($contenttypes, $item->type) !== false;
+        });
+
+        $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
+            return (($item->timestamp >= $interactivevideo->starttime
+                && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
+                && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
+        });
+
+        if (!$includeanalytics) {
+            $relevantitems = array_filter($relevantitems, function ($item) {
+                return $item->type != 'analytics';
+            });
+        }
+
+        $skipsegment = array_filter($relevantitems, function ($item) {
+            return $item->type === 'skipsegment';
+        });
+
+        $analytics = array_filter($relevantitems, function ($item) {
+            return $item->type === 'analytics';
+        });
+        $analytics = reset($analytics);
+
+        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
+            foreach ($skipsegment as $ss) {
+                if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title && $item->timestamp >= 0) {
+                    return false;
+                }
+            }
+            if ($item->type === 'skipsegment') {
+                return false;
+            }
+            if ($item->type === 'analytics' && $item->hascompletion != 1) {
+                return false;
+            }
+            return true;
+        });
+
+        $this->ivitems = $relevantitems;
 
         return new overviewitem(
             get_string('interactions', 'mod_interactivevideo'),
