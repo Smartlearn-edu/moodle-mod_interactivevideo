@@ -45,6 +45,7 @@ class overview extends \core_courseformat\activityoverviewbase {
         \cm_info $cm,
         \core\output\renderer_helper $rendererhelper
     ) {
+        global $DB;
         parent::__construct($cm);
         $customdata = $cm->get_custom_data();
         $startend = explode('-', $customdata['startendtime']);
@@ -66,6 +67,13 @@ class overview extends \core_courseformat\activityoverviewbase {
         $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
 
         $items = $cache->get($cm->instance);
+        if (empty($items)) {
+            $items = $DB->get_records(
+                'interactivevideo_items',
+                ['annotationid' => $cm->instance]
+            );
+            $cache->set($cm->instance, $items);
+        }
         // What if $enabedcontenttypes changes.
         if (!$items || empty($items)) {
             $this->ivitems = [];
