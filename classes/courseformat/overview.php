@@ -43,7 +43,7 @@ class overview extends \core_courseformat\activityoverviewbase {
      */
     public function __construct(
         \cm_info $cm,
-        \core\output\renderer_helper $rendererhelper,
+        \core\output\renderer_helper $rendererhelper
     ) {
         parent::__construct($cm);
         $customdata = $cm->get_custom_data();
