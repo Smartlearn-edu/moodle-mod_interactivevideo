@@ -43,8 +43,7 @@ class overview extends \core_courseformat\activityoverviewbase {
      */
     public function __construct(
         \cm_info $cm,
-        /** @var \core\output\renderer_helper $rendererhelper the renderer helper */
-        protected readonly \core\output\renderer_helper $rendererhelper,
+        \core\output\renderer_helper $rendererhelper,
     ) {
         parent::__construct($cm);
         $customdata = $cm->get_custom_data();
@@ -73,7 +72,8 @@ class overview extends \core_courseformat\activityoverviewbase {
 
         $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
             return (($item->timestamp >= $interactivevideo->starttime && $item->timestamp <= $interactivevideo->endtime)
-                || $item->timestamp < 0) && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
+                || $item->timestamp < 0) && ($item->hascompletion == 1
+                || $item->type == 'skipsegment' || $item->type == 'analytics');
         });
 
         if (!$includeanalytics) {
@@ -190,6 +190,11 @@ class overview extends \core_courseformat\activityoverviewbase {
         );
     }
 
+    /**
+     * Get the number of interactions for the given module instance.
+     *
+     * @return overviewitem|null An overview item or null if the user lacks the required capability.
+     */
     private function get_extra_interactions(): ?overviewitem {
         if (!has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
             return null;

@@ -2783,7 +2783,6 @@ function interactivevideo_user_complete($course, $user, $mod, $iv) {
         return;
     }
 
-    // $details = json_decode($completion->completiondetails, true);
     $details = json_decode($completion->completiondetails, true);
     $details = array_map(function ($item) {
         $item = json_decode($item, true);
