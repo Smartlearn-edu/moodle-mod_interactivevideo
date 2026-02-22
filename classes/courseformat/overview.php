@@ -63,17 +63,22 @@ class overview extends \core_courseformat\activityoverviewbase {
         $enabledcontenttypes = explode(',', $contenttypes);
         $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
 
-        $cache = \cache::make('mod_interactivevideo', 'iv_items_by_cmid');
+        $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
+
         $items = $cache->get($cm->instance);
-        // What if $enabedcontenttypes changes?
+        // What if $enabedcontenttypes changes.
+        if (!$items || empty($items)) {
+            $this->ivitems = [];
+            return;
+        }
+
         $items = array_filter($items, function ($item) use ($contenttypes) {
             return strpos($contenttypes, $item->type) !== false;
         });
 
         $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
-            return (($item->timestamp >= $interactivevideo->starttime && $item->timestamp <= $interactivevideo->endtime)
-                || $item->timestamp < 0) && ($item->hascompletion == 1
-                || $item->type == 'skipsegment' || $item->type == 'analytics');
+            return (($item->timestamp >= $interactivevideo->starttime && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
+                && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
         });
 
         if (!$includeanalytics) {
@@ -98,6 +103,9 @@ class overview extends \core_courseformat\activityoverviewbase {
                 }
             }
             if ($item->type === 'skipsegment') {
+                return false;
+            }
+            if ($item->type === 'analytics' && $item->hascompletion != 1) {
                 return false;
             }
             return true;
