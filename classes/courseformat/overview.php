@@ -115,16 +115,16 @@ class overview extends \core_courseformat\activityoverviewbase {
         $viewresults = get_string('fullreport', 'mod_interactivevideo');
         $reporturl = new url('/mod/interactivevideo/report.php', ['id' => $this->cm->id]);
         $content = new action_link(
-            url: $reporturl,
-            text: $viewresults,
-            attributes: ['class' => button::SECONDARY_OUTLINE->classes()],
+            $reporturl,
+            $viewresults,
+            ['class' => button::SECONDARY_OUTLINE->classes()],
         );
 
         return new overviewitem(
-            name: get_string('actions'),
-            value: '',
-            content: $content,
-            textalign: text_align::CENTER,
+            get_string('actions'),
+            '',
+            $content,
+            text_align::CENTER,
         );
     }
 
@@ -159,9 +159,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         return new overviewitem(
-            name: get_string('xp', 'mod_interactivevideo'),
-            value: $xp,
-            content: $xp,
+            get_string('xp', 'mod_interactivevideo'),
+            $xp,
+            $xp,
         );
     }
 
@@ -184,9 +184,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         return new overviewitem(
-            name: get_string('completionpercentage', 'mod_interactivevideo'),
-            value: $completion,
-            content: $completion,
+            get_string('completionpercentage', 'mod_interactivevideo'),
+            $completion,
+            $completion,
         );
     }
 
@@ -201,9 +201,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         return new overviewitem(
-            name: get_string('interactions', 'mod_interactivevideo'),
-            value: count($this->ivitems),
-            content: count($this->ivitems),
+            get_string('interactions', 'mod_interactivevideo'),
+            count($this->ivitems),
+            count($this->ivitems),
         );
     }
 
@@ -225,9 +225,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         $started = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
 
         return new overviewitem(
-            name: get_string('studentsstarted', 'mod_interactivevideo'),
-            value: $started,
-            content: $started . " / " . $allstudents,
+            get_string('studentsstarted', 'mod_interactivevideo'),
+            $started,
+            $started . " / " . $allstudents,
         );
     }
 
@@ -253,9 +253,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         $completed = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
 
         return new overviewitem(
-            name: get_string('studentscompleted', 'mod_interactivevideo'),
-            value: $completed,
-            content: $completed . " / " . $allstudents,
+            get_string('studentscompleted', 'mod_interactivevideo'),
+            $completed,
+            $completed . " / " . $allstudents,
         );
     }
 
@@ -277,9 +277,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         $ended = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
 
         return new overviewitem(
-            name: get_string('studentsended', 'mod_interactivevideo'),
-            value: $ended,
-            content: $ended . " / " . $allstudents,
+            get_string('studentsended', 'mod_interactivevideo'),
+            $ended,
+            $ended . " / " . $allstudents,
         );
     }
 }
