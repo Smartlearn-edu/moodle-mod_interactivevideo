@@ -163,6 +163,23 @@ class overview extends \core_courseformat\activityoverviewbase {
     }
 
     /**
+     * Get the number of interactions for the given module instance.
+     *
+     * @return overviewitem|null An overview item or null if the user lacks the required capability.
+     */
+    private function get_extra_interactions(): ?overviewitem {
+        if (has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
+            return null;
+        }
+
+        return new overviewitem(
+            get_string('interactions', 'mod_interactivevideo'),
+            count($this->ivitems),
+            count($this->ivitems),
+        );
+    }
+
+    /**
      * Get the number of students who started the activity.
      *
      * @return overviewitem|null An overview item or null if the user lacks the required capability.
@@ -209,23 +226,6 @@ class overview extends \core_courseformat\activityoverviewbase {
             get_string('completionpercentage', 'mod_interactivevideo'),
             $completion,
             $completion,
-        );
-    }
-
-    /**
-     * Get the number of interactions for the given module instance.
-     *
-     * @return overviewitem|null An overview item or null if the user lacks the required capability.
-     */
-    private function get_extra_interactions(): ?overviewitem {
-        if (has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
-            return null;
-        }
-
-        return new overviewitem(
-            get_string('interactions', 'mod_interactivevideo'),
-            count($this->ivitems),
-            count($this->ivitems),
         );
     }
 
