@@ -114,8 +114,9 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         $viewresults = get_string('fullreport', 'mod_interactivevideo');
+        $reporturl = new url('/mod/interactivevideo/report.php', ['id' => $this->cm->id]);
         $content = new action_link(
-            url: new url('/mod/interactivevideo/report.php', ['id' => $this->cm->id]),
+            url: $reporturl,
             text: $viewresults,
             attributes: ['class' => button::SECONDARY_OUTLINE->classes()],
         );
