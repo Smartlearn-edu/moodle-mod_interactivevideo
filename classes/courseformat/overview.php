@@ -77,7 +77,8 @@ class overview extends \core_courseformat\activityoverviewbase {
         });
 
         $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
-            return (($item->timestamp >= $interactivevideo->starttime && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
+            return (($item->timestamp >= $interactivevideo->starttime
+                && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
                 && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
         });
 
