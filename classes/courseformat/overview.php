@@ -48,8 +48,83 @@ class overview extends \core_courseformat\activityoverviewbase {
         \cm_info $cm,
         \core\output\renderer_helper $rendererhelper
     ) {
+        global $DB;
         parent::__construct($cm);
-        $this->allstudents = count_enrolled_users($this->cm->context);
+        $this->allstudents = count_enrolled_users($cm->context);
+        $customdata = $cm->get_custom_data();
+        $startend = explode('-', $customdata['startendtime']);
+        $interactivevideo = [
+            'id' => $cm->instance,
+            'name' => $cm->name,
+            'starttime' => $startend[0],
+            'endtime' => $startend[1],
+            'type' => $customdata['type'],
+            'completionpercentage' => isset($customdata['customcompletionrules'])
+                ? $customdata['customcompletionrules']['completionpercentage'] : 0,
+        ];
+
+        $interactivevideo = (object) $interactivevideo;
+        $contenttypes = get_config('mod_interactivevideo', 'enablecontenttypes');
+        $enabledcontenttypes = explode(',', $contenttypes);
+        $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
+
+        $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
+
+        $items = $cache->get($cm->instance);
+        if (empty($items)) {
+            $items = $DB->get_records(
+                'interactivevideo_items',
+                ['annotationid' => $cm->instance]
+            );
+            $cache->set($cm->instance, $items);
+        }
+        // What if $enabedcontenttypes changes.
+        if (!$items || empty($items)) {
+            $this->ivitems = [];
+            return;
+        }
+
+        $items = array_filter($items, function ($item) use ($contenttypes) {
+            return strpos($contenttypes, $item->type) !== false;
+        });
+
+        $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
+            return (($item->timestamp >= $interactivevideo->starttime
+                && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
+                && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
+        });
+
+        if (!$includeanalytics) {
+            $relevantitems = array_filter($relevantitems, function ($item) {
+                return $item->type != 'analytics';
+            });
+        }
+
+        $skipsegment = array_filter($relevantitems, function ($item) {
+            return $item->type === 'skipsegment';
+        });
+
+        $analytics = array_filter($relevantitems, function ($item) {
+            return $item->type === 'analytics';
+        });
+        $analytics = reset($analytics);
+
+        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
+            foreach ($skipsegment as $ss) {
+                if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title && $item->timestamp >= 0) {
+                    return false;
+                }
+            }
+            if ($item->type === 'skipsegment') {
+                return false;
+            }
+            if ($item->type === 'analytics' && $item->hascompletion != 1) {
+                return false;
+            }
+            return true;
+        });
+
+        $this->ivitems = $relevantitems;
     }
 
     #[\Override]
@@ -146,83 +221,6 @@ class overview extends \core_courseformat\activityoverviewbase {
         if (has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
             return null;
         }
-        global $DB;
-        $cm = $this->cm;
-
-        $customdata = $cm->get_custom_data();
-        $startend = explode('-', $customdata['startendtime']);
-        $interactivevideo = [
-            'id' => $cm->instance,
-            'name' => $cm->name,
-            'starttime' => $startend[0],
-            'endtime' => $startend[1],
-            'type' => $customdata['type'],
-            'completionpercentage' => isset($customdata['customcompletionrules'])
-                ? $customdata['customcompletionrules']['completionpercentage'] : 0,
-        ];
-
-        $interactivevideo = (object) $interactivevideo;
-        $contenttypes = get_config('mod_interactivevideo', 'enablecontenttypes');
-        $enabledcontenttypes = explode(',', $contenttypes);
-        $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
-
-        $cache = cache::make('mod_interactivevideo', 'iv_items_by_cmid');
-
-        $items = $cache->get($cm->instance);
-        if (empty($items)) {
-            $items = $DB->get_records(
-                'interactivevideo_items',
-                ['annotationid' => $cm->instance]
-            );
-            $cache->set($cm->instance, $items);
-        }
-        // What if $enabedcontenttypes changes.
-        if (!$items || empty($items)) {
-            $this->ivitems = [];
-            return null;
-        }
-
-        $items = array_filter($items, function ($item) use ($contenttypes) {
-            return strpos($contenttypes, $item->type) !== false;
-        });
-
-        $relevantitems = array_filter($items, function ($item) use ($interactivevideo) {
-            return (($item->timestamp >= $interactivevideo->starttime
-                && $item->timestamp <= $interactivevideo->endtime) || $item->timestamp < 0)
-                && ($item->hascompletion == 1 || $item->type == 'skipsegment' || $item->type == 'analytics');
-        });
-
-        if (!$includeanalytics) {
-            $relevantitems = array_filter($relevantitems, function ($item) {
-                return $item->type != 'analytics';
-            });
-        }
-
-        $skipsegment = array_filter($relevantitems, function ($item) {
-            return $item->type === 'skipsegment';
-        });
-
-        $analytics = array_filter($relevantitems, function ($item) {
-            return $item->type === 'analytics';
-        });
-        $analytics = reset($analytics);
-
-        $relevantitems = array_filter($relevantitems, function ($item) use ($skipsegment) {
-            foreach ($skipsegment as $ss) {
-                if ($item->timestamp > $ss->timestamp && $item->timestamp < $ss->title && $item->timestamp >= 0) {
-                    return false;
-                }
-            }
-            if ($item->type === 'skipsegment') {
-                return false;
-            }
-            if ($item->type === 'analytics' && $item->hascompletion != 1) {
-                return false;
-            }
-            return true;
-        });
-
-        $this->ivitems = $relevantitems;
 
         return new overviewitem(
             get_string('interactions', 'mod_interactivevideo'),
@@ -242,8 +240,7 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         global $DB;
-        // Student count.
-        $allstudents = $this->allstudents;
+
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timecreated > 0";
         $started = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
@@ -251,7 +248,7 @@ class overview extends \core_courseformat\activityoverviewbase {
         return new overviewitem(
             get_string('studentsstarted', 'mod_interactivevideo'),
             $started,
-            $started . " / " . $allstudents,
+            $started . " / " . $this->allstudents,
         );
     }
 
@@ -270,8 +267,6 @@ class overview extends \core_courseformat\activityoverviewbase {
         }
 
         global $DB;
-        // Student count.
-        $allstudents = $this->allstudents;
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timecompleted > 0";
         $completed = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
@@ -279,7 +274,7 @@ class overview extends \core_courseformat\activityoverviewbase {
         return new overviewitem(
             get_string('studentscompleted', 'mod_interactivevideo'),
             $completed,
-            $completed . " / " . $allstudents,
+            $completed . " / " . $this->allstudents,
         );
     }
 
@@ -295,7 +290,6 @@ class overview extends \core_courseformat\activityoverviewbase {
 
         global $DB;
         // Student count.
-        $allstudents = $this->allstudents;
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timeended > 0";
         $ended = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
@@ -303,7 +297,7 @@ class overview extends \core_courseformat\activityoverviewbase {
         return new overviewitem(
             get_string('studentsended', 'mod_interactivevideo'),
             $ended,
-            $ended . " / " . $allstudents,
+            $ended . " / " . $this->allstudents,
         );
     }
 }
