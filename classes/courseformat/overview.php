@@ -108,7 +108,6 @@ class overview extends \core_courseformat\activityoverviewbase {
 
     #[\Override]
     public function get_actions_overview(): ?overviewitem {
-
         if (!has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
             return null;
         }
@@ -214,7 +213,6 @@ class overview extends \core_courseformat\activityoverviewbase {
      * @return overviewitem|null An overview item or null if the user lacks the required capability.
      */
     private function get_extra_students_started(): ?overviewitem {
-
         if (!has_capability('mod/interactivevideo:viewreport', $this->cm->context)) {
             return null;
         }
