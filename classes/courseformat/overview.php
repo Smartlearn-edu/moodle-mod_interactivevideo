@@ -117,7 +117,8 @@ class overview extends \core_courseformat\activityoverviewbase {
         $content = new action_link(
             $reporturl,
             $viewresults,
-            ['class' => 'btn-outline-secondary'],
+            null,
+            ['class' => 'btn btn-outline-secondary'],
         );
 
         return new overviewitem(
