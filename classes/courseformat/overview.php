@@ -35,6 +35,8 @@ class overview extends \core_courseformat\activityoverviewbase {
     /** @var array The interactive video items. */
     private array $ivitems;
 
+    private int $allstudents;
+
     /**
      * Constructor.
      *
@@ -47,6 +49,7 @@ class overview extends \core_courseformat\activityoverviewbase {
     ) {
         global $DB;
         parent::__construct($cm);
+        $this->allstudents = count_enrolled_users($this->cm->context);
     }
 
     #[\Override]
@@ -240,7 +243,7 @@ class overview extends \core_courseformat\activityoverviewbase {
 
         global $DB;
         // Student count.
-        $allstudents = count_enrolled_users($this->cm->context);
+        $allstudents = $this->allstudents;
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timecreated > 0";
         $started = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
@@ -268,7 +271,7 @@ class overview extends \core_courseformat\activityoverviewbase {
 
         global $DB;
         // Student count.
-        $allstudents = count_enrolled_users($this->cm->context);
+        $allstudents = $this->allstudents;
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timecompleted > 0";
         $completed = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
@@ -292,7 +295,7 @@ class overview extends \core_courseformat\activityoverviewbase {
 
         global $DB;
         // Student count.
-        $allstudents = count_enrolled_users($this->cm->context);
+        $allstudents = $this->allstudents;
         $sql = "SELECT COUNT(DISTINCT c.userid) FROM {interactivevideo_completion} c
                 WHERE c.cmid = :cmid AND c.timeended > 0";
         $ended = $DB->count_records_sql($sql, ['cmid' => $this->cm->instance]);
