@@ -35,6 +35,7 @@ class overview extends \core_courseformat\activityoverviewbase {
     /** @var array The interactive video items. */
     private array $ivitems;
 
+    /** @var int The total number of students. */
     private int $allstudents;
 
     /**
@@ -47,7 +48,6 @@ class overview extends \core_courseformat\activityoverviewbase {
         \cm_info $cm,
         \core\output\renderer_helper $rendererhelper
     ) {
-        global $DB;
         parent::__construct($cm);
         $this->allstudents = count_enrolled_users($this->cm->context);
     }
