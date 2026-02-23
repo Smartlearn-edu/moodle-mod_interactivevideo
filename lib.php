@@ -36,30 +36,30 @@ define('INTERACTIVEVIDEO_EVENT_TYPE_DUE', 'due');
  * @return true | null True if the feature is supported, null otherwise.
  */
 function interactivevideo_supports($feature) {
-    switch ($feature) {
-        case FEATURE_MOD_INTRO:
-            return true;
-        case FEATURE_BACKUP_MOODLE2:
-            return true;
-        case FEATURE_SHOW_DESCRIPTION:
-            return true;
-        case FEATURE_COMPLETION_TRACKS_VIEWS:
-            return true;
-        case FEATURE_MOD_PURPOSE:
-            return MOD_PURPOSE_CONTENT;
-        case FEATURE_COMPLETION_HAS_RULES:
-            return true;
-        case FEATURE_GRADE_HAS_GRADE:
-            return true;
-        case FEATURE_GROUPS:
-            return true;
-        case FEATURE_GROUPINGS:
-            return true;
-        case FEATURE_MODEDIT_DEFAULT_COMPLETION:
-            return false;
-        default:
-            return null;
+    global $CFG;
+    $features = [
+        FEATURE_MOD_INTRO,
+        FEATURE_BACKUP_MOODLE2,
+        FEATURE_SHOW_DESCRIPTION,
+        FEATURE_COMPLETION_TRACKS_VIEWS,
+        FEATURE_COMPLETION_HAS_RULES,
+        FEATURE_GRADE_HAS_GRADE,
+        FEATURE_GROUPS,
+        FEATURE_GROUPINGS,
+    ];
+    if (in_array($feature, $features, true)) {
+        return true;
     }
+    if ($feature === FEATURE_MODEDIT_DEFAULT_COMPLETION) {
+        return false;
+    }
+    if ($feature === FEATURE_MOD_PURPOSE) {
+        return MOD_PURPOSE_CONTENT;
+    }
+    if ($CFG->branch >= 501 && $feature === FEATURE_MOD_OTHERPURPOSE) {
+        return MOD_PURPOSE_ASSESSMENT;
+    }
+    return null;
 }
 
 /**
@@ -849,7 +849,7 @@ function interactivevideo_displayinline(cm_info $cm) {
 
     // Get interactive_items. Must include skipsegments for filtering later.
     $contenttypes = get_config('mod_interactivevideo', 'enablecontenttypes');
-    $enabledcontenttypes = explode(',', get_config('mod_interactivevideo', 'enablecontenttypes'));
+    $enabledcontenttypes = explode(',', $contenttypes);
     $includeanalytics = in_array('local_ivanalytics', $enabledcontenttypes);
     $cache = \cache::make('mod_interactivevideo', 'iv_items_by_cmid');
     $items = $cache->get($cm->instance);
@@ -2763,4 +2763,91 @@ function interactivevideo_get_type_from_url($url) {
     }
 
     return '';
+}
+
+/**
+ * Render outline report row for interactive video
+ *
+ * @param mixed $course The course object
+ * @param mixed $user The user object
+ * @param mixed $mod The mod object
+ * @param mixed $iv The interactive video object
+ * @return void
+ */
+function interactivevideo_user_complete($course, $user, $mod, $iv) {
+    global $DB;
+
+    $completion = $DB->get_record('interactivevideo_completion', ['cmid' => $iv->id, 'userid' => $user->id]);
+    if (!$completion) {
+        echo '<p>' . get_string('notstarted', 'mod_interactivevideo') . '</p>';
+        return;
+    }
+
+    $details = json_decode($completion->completiondetails, true);
+    $details = array_map(function ($item) {
+        $item = json_decode($item, true);
+        return (object)$item;
+    }, $details);
+    // Has analytics?
+    $analytics = array_filter($details, function ($item) {
+        return isset($item->percentage);
+    });
+    $analytics = reset($analytics);
+    // Has reaction?
+    $reaction = array_filter($details, function ($item) {
+        return isset($item->type) && $item->type == 'reaction';
+    });
+    $reaction = reset($reaction);
+
+    // Render table row for start time, time ended, completion percentage, xp.
+    echo '<table class="table table-sm table-striped small w-100">';
+    echo '<thead>';
+    echo '<tr>';
+    echo '<th>' . get_string('timestarted', 'mod_interactivevideo') . '</th>';
+    echo '<th>' . get_string('completionpercentage', 'mod_interactivevideo')
+        . ($iv->completionpercentage ? ' (' . $iv->completionpercentage . '%)' : '') . '</th>';
+    echo '<th>' . get_string('xp', 'mod_interactivevideo') . '</th>';
+    echo '<th>' . get_string('timecompleted', 'mod_interactivevideo') . '</th>';
+    echo '<th>' . get_string('watchtillend', 'mod_interactivevideo') . '</th>';
+    if ($analytics) {
+        $requiredpercentage = null;
+        $extendedcompletion = json_decode($iv->extendedcompletion ?? '[]', true);
+        if (isset($extendedcompletion['watchedpercentage'])) {
+            $requiredpercentage = $extendedcompletion['watchedpercentage'];
+        }
+        echo '<th>' . get_string('watchedpercentage', 'mod_interactivevideo')
+            . ($requiredpercentage ? ' (' . $requiredpercentage . '%)' : '') . '</th>';
+    }
+    if ($reaction) {
+        echo '<th>' . get_string('reaction', 'local_ivreaction') . '</th>';
+    }
+    echo '</tr>';
+    echo '</thead>';
+    echo '<tbody>';
+    echo '<tr>';
+    echo '<td>' . userdate($completion->timecreated, get_string('strftimedatetime', 'langconfig')) . '</td>';
+    echo '<td>' . $completion->completionpercentage . '%</td>';
+    echo '<td>' . $completion->xp . '</td>';
+    echo '<td>' . ($completion->timecompleted ?
+        userdate($completion->timecompleted, get_string('strftimedatetime', 'langconfig'))
+        : get_string('notstarted', 'mod_interactivevideo')) . '</td>';
+    echo '<td>' . ($completion->timeended ? get_string('yes') : get_string('no')) . '</td>';
+    if ($analytics) {
+        echo '<td>' . $analytics->percentage . '%</td>';
+    }
+    if ($reaction) {
+        global $OUTPUT;
+        $reactionemoji = $OUTPUT->image_icon(
+            $reaction->reportView,
+            get_string($reaction->reportView . '-emoji', 'local_ivreaction'),
+            'local_ivreaction',
+            [
+                'class' => 'iv-ml-2',
+            ]
+        );
+        echo '<td>' . get_string($reaction->reportView . '-emoji', 'local_ivreaction') . $reactionemoji . '</td>';
+    }
+    echo '</tr>';
+    echo '</tbody>';
+    echo '</table>';
 }
