@@ -103,18 +103,10 @@ class form extends \mod_interactivevideo\form\base_form
         $mform->addElement('selectyesno', 'intg1', get_string('showsubtitle', 'ivplugin_subtitle'));
         $mform->setDefault('intg1', 1);
 
-        // We set defaults to hide the interaction markers/clicks since this is a background utility
-        $this->display_options_field('bottom');
+        $this->display_options_field();
         $this->advanced_form_fields([
             'hascompletion' => false,
-            'visibility' => true,
-            'click' => true,
         ]);
-
-        // Force defaults for new instances
-        $mform->setDefault('visiblebeforecompleted', 0);
-        $mform->setDefault('clickablebeforecompleted', 0);
-
         $this->close_form();
     }
 }

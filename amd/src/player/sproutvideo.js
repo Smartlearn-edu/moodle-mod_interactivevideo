@@ -138,7 +138,6 @@ class SproutVideo {
             }
         });
     }
-
     /**
      * Load a Sprout Video player instance.
      * Documented at https://sproutvideo.com/help/articles/27-javascript_player_api

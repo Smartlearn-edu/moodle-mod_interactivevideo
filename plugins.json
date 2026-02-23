@@ -1,18 +1,6 @@
 {
     "subplugins": [
         {
-            "name": "question",
-            "title": "Question",
-            "component": "local_ivquestion",
-            "description": "Add a single MCQ to the video.",
-            "icon": "bi bi-question",
-            "version": "2026020602",
-            "type": "paid",
-            "description_url": "",
-            "download_url": "https://buymeacoffee.com/tsmakara/e/509257",
-            "git": "https://github.com/sokunthearithmakara/local_ivquestion/archive/refs/heads/master.zip"
-        },
-        {
             "name": "videotrack",
             "title": "Video Track",
             "component": "local_ivvideotrack",
@@ -138,7 +126,7 @@
             "component": "local_ivannotation",
             "description": "Add persistent annotations on top of the video.",
             "icon": "bi bi-pip",
-            "version": "2026011603",
+            "version": "2026011600",
             "type": "free",
             "description_url": "https://buymeacoffee.com/tsmakara/ivannotation",
             "download_url": "https://buymeacoffee.com/tsmakara/e/355182",
@@ -186,7 +174,7 @@
             "component": "local_ivinlineannotation",
             "description": "Superimpose an audio, image, or video on the video.",
             "icon": "bi bi-pip-fill",
-            "version": "2026021400",
+            "version": "2026011600",
             "type": "free",
             "description_url": "https://buymeacoffee.com/tsmakara/ivinlineannotation",
             "download_url": "https://buymeacoffee.com/tsmakara/e/371268",

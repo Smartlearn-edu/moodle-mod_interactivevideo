@@ -1458,7 +1458,6 @@ html:has(.path-mod-interactivevideo) {
 .path-mod-interactivevideo #message[data-placement=side] #title {
     height: 70px;
     align-items: center;
-    padding: 0 0.75rem;
 }
 
 .path-mod-interactivevideo #message[data-placement=side] #content {
@@ -2342,11 +2341,11 @@ html:has(.path-mod-interactivevideo) {
 }
 
 #page-mod-interactivevideo-view #caption-dropdown {
+    max-height: 400px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: hsl(0, 0%, 67%) rgba(0, 0, 0, 1);
     overflow-x: hidden;
-    max-height: 250px;
 }
 
 .path-mod-interactivevideo .alternative #wrapper #taskinfo {
@@ -4024,19 +4023,12 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     filter: invert(1);
 }
 
-.path-mod-interactivevideo .fitem[data-groupname]:is([data-groupname="beforecompletion"],
-[data-groupname="aftercompletion"],
-[data-groupname="beforecompletionbehavior"],
-[data-groupname="aftercompletionbehavior"],
-[data-groupname="activitycardgroup"],
-[data-groupname="cardoptiongroup"],
-[data-groupname="behaviorgroup"]) .form-check-inline {
+.path-mod-interactivevideo .fitem[data-groupname]:is([data-groupname="beforecompletion"], [data-groupname="aftercompletion"], [data-groupname="beforecompletionbehavior"], [data-groupname="aftercompletionbehavior"], [data-groupname="activitycardgroup"], [data-groupname="cardoptiongroup"], [data-groupname="behaviorgroup"]) .form-check-inline {
     width: 100%;
     justify-content: flex-start;
 }
 
-.path-mod-interactivevideo .fitem:is([data-groupname="beforecompletion"],
-[data-groupname="aftercompletion"]) [data-fieldtype="group"] > * {
+.path-mod-interactivevideo .fitem:is([data-groupname="beforecompletion"], [data-groupname="aftercompletion"]) [data-fieldtype="group"] > * {
     column-count: 2;
 }
 
@@ -4053,8 +4045,7 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     right: 0 !important;
 }
 
-.path-mod-interactivevideo.dir-rtl:not(.bs-5) .dropdown div.dropdown-menu-right:not(#user-action-menu,
-#courseindexdrawercontrolsmenu) {
+.path-mod-interactivevideo.dir-rtl:not(.bs-5) .dropdown div.dropdown-menu.dropdown-menu-right:not(#user-action-menu,#courseindexdrawercontrolsmenu) {
     left: unset !important;
 }
 
@@ -4086,8 +4077,4 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     height: 25px;
     padding: 0;
     line-height: 25px;
-}
-
-#admin-enablecontenttypes .form-defaultinfo {
-    display: none;
 }

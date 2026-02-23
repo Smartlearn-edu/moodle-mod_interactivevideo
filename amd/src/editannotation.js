@@ -225,11 +225,7 @@ export default {
 
             annotations.forEach(function(item) {
                 let listItem = $('#annotation-template').clone();
-                try {
-                    ctRenderer[item.type].renderEditItem(annotations, listItem, item);
-                } catch (e) {
-                    window.console.error(e, item);
-                }
+                ctRenderer[item.type].renderEditItem(annotations, listItem, item);
             });
 
             let xp = annotations.filter(x => x.xp).map(x => Number(x.xp)).reduce((a, b) => a + b, 0);
@@ -799,8 +795,6 @@ export default {
 
         // Post annotation update (add, edit, clone).
         $(document).on('annotationupdated', function(e) {
-            // Remove any tooltips that may be open.
-            $('.tooltip').remove();
             $.ajax({
                 url: M.cfg.wwwroot + '/mod/interactivevideo/ajax.php',
                 method: "POST",
@@ -862,8 +856,6 @@ export default {
 
         // Re-render annotation list and timeline after an annotation is deleted.
         $(document).on('annotationdeleted', function(e) {
-            // Remove any tooltips that may be open.
-            $('.tooltip').remove();
             const annotation = e.originalEvent.detail.annotation;
             activeid = null;
             $annotationlist.find(`tr[data-id="${annotation.id}"]`).addClass('deleted');
@@ -2665,6 +2657,7 @@ export default {
         });
 
         // Implement keyboard shortcuts.
+
         document.addEventListener('keydown', async function(e) {
             // Ignore spacebar when focus is on an input, textarea, or button
             const activeTag = document.activeElement.tagName.toLowerCase();

@@ -456,15 +456,6 @@ class interactivevideo_util {
                 if (!isset($properties['preloadstrings'])) {
                     $properties['preloadstrings'] = true;
                 }
-                if ($fromview) { // Remove unneeded properties.
-                    unset($properties['form']);
-                    unset($properties['description']);
-                    unset($properties['stringcomponent']);
-                    unset($properties['initonreport']);
-                    unset($properties['author']);
-                    unset($properties['tutorial']);
-                    unset($properties['pro']);
-                }
                 $contentoptions[] = $properties;
             }
         }
