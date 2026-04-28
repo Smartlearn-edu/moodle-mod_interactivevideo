@@ -25,6 +25,8 @@
 $string['pluginname'] = 'n8n Chat';
 $string['webhookurl'] = 'Webhook URL';
 $string['webhookurl_desc'] = 'The n8n webhook URL to connect the chat to.';
+$string['webhookurl_help'] = 'Enter the production Webhook URL provided by your n8n workflow. This is securely used to send and receive chat messages.';
 $string['welcomemessage'] = 'Welcome Message';
 $string['welcomemessage_desc'] = 'Initial message displayed to the user.';
+$string['welcomemessage_help'] = 'Define the first message the AI should present to the learner when they open the chat.';
 $string['welcomemessage_default'] = 'Welcome! How can I assist you on this course?';

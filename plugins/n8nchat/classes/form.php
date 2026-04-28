@@ -49,17 +49,17 @@ class form extends \mod_interactivevideo\form\base_form
     {
         $mform = $this->_form;
 
-        // Add standard elements (time, duration, etc.)
-        $this->standard_elements();
+        // Add standard hidden elements (time, duration, etc.) required for core DB save
+        // Passing false prevents the base class from adding its own 'general' header
+        $this->standard_elements(false);
 
         // Header
         $mform->addElement('header', 'general', \get_string('pluginname', 'ivplugin_n8nchat'));
 
-        // Title
-        $mform->addElement('text', 'title', \get_string('title', 'mod_interactivevideo'));
+        // Hardcode a default title and hide the field 
+        // (removes clutter for the teacher since it's a global interaction)
+        $mform->addElement('hidden', 'title', 'Chat With Video');
         $mform->setType('title', \PARAM_TEXT);
-        $mform->addRule('title', null, 'required', null, 'client');
-        $mform->setDefault('title', 'Chat With Video');
 
         // Webhook URL (mapped to text1 for storage)
         $mform->addElement('text', 'text1', \get_string('webhookurl', 'ivplugin_n8nchat'));
@@ -71,10 +71,7 @@ class form extends \mod_interactivevideo\form\base_form
         $mform->addElement('text', 'text2', \get_string('welcomemessage', 'ivplugin_n8nchat'));
         $mform->setType('text2', \PARAM_TEXT);
         $mform->addHelpButton('text2', 'welcomemessage', 'ivplugin_n8nchat');
-        $mform->setDefault('text2', 'Welcome! How can I assist you today?');
-
-        // Allow display options (popup, side, etc.)
-        $this->display_options_field('side');
+        $mform->setDefault('text2', \get_string('welcomemessage_default', 'ivplugin_n8nchat'));
 
         // Close form (standard buttons)
         $this->close_form();

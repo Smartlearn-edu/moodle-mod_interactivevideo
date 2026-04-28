@@ -40,19 +40,6 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
             const activityName = $container.data('defaults-activity') || '';
             const cmid = $container.data('defaults-cmid') || '';
 
-            // Start tracking video time
-            this.currentVideoTime = 0;
-            if (this.player && typeof this.player.getCurrentTime === 'function') {
-                // Poll for time every second since getCurrentTime is async
-                this.timeTrackerInterval = setInterval(async () => {
-                    try {
-                        this.currentVideoTime = await this.player.getCurrentTime();
-                    } catch (e) {
-                        // Ignore errors if player is not ready
-                    }
-                }, 1000);
-            }
-
             // Generate a unique ID for the target element *inside* our placeholder
             const targetId = 'n8n-chat-target-' + annotation.id;
             // Clear placeholder content and set the ID
@@ -96,10 +83,11 @@ define(['jquery', 'mod_interactivevideo/type/base'], function ($, Base) {
                     activityId: cmid
                 };
 
-                // Define getter for currentVideoTime to return the tracked value
+                // Provide the video time on-demand asynchronously when n8n requests metadata
                 Object.defineProperty(metadata, 'currentVideoTime', {
                     get: () => {
-                        return this.currentVideoTime;
+                        const timeElement = document.getElementById('currenttime');
+                        return timeElement ? timeElement.innerText.trim() : '00:00';
                     },
                     enumerable: true
                 });
