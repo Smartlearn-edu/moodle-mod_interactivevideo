@@ -106,6 +106,15 @@ class reset_form extends \core_form\dynamic_form {
         $behavior = [
             'autoplay',
             'pauseonblur',
+            'watermarkenabled',
+            'watermarkopacity',
+            'watermarkcolor',
+            'watermarkinterval',
+            'watermarksize',
+            'watermarkpos_tl',
+            'watermarkpos_tr',
+            'watermarkpos_br',
+            'watermarkpos_bl',
             'beforecompletionbehavior',
             'aftercompletionbehavior',
         ];
@@ -127,6 +136,9 @@ class reset_form extends \core_form\dynamic_form {
             $behaviorsettings = explode(',', $behaviorsettings);
             foreach ($behaviorsettings as $setting) {
                 $displayoptions->$setting = 1;
+            }
+            foreach (interactivevideo_watermark_defaults() as $wmkey => $wmval) {
+                $displayoptions->$wmkey = $wmval;
             }
             $appearanceoptions = [
                 'useoriginalvideocontrols' => $displayoptions->useoriginalvideocontrols,
@@ -437,12 +449,14 @@ class reset_form extends \core_form\dynamic_form {
             $mform->hideIf('posterimagefile', 'action', 'eq', 'appearance');
         } else if ($action == 'behavior') {
             \interactivevideo_appearanceandbehavior_form($mform, null, ['behavior']);
+            \interactivevideo_watermark_form($mform, null, true);
         }
 
         $cache = \cache::make('mod_interactivevideo', 'interactivevideo_settings');
         $settings = $cache->get($courseid);
         if ($settings && get_config('mod_interactivevideo', 'enablecoursesettings')) {
             $displayoptions = json_decode($settings->displayoptions, true);
+            \interactivevideo_apply_watermark_defaults($displayoptions, $displayoptions);
             $mform->setDefaults($displayoptions);
         }
     }

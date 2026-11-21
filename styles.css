@@ -4078,3 +4078,58 @@ body.path-admin-setting #admin-enablecontenttypes .form-defaultinfo {
     padding: 0;
     line-height: 25px;
 }
+
+.path-mod-interactivevideo #video-wrapper #iv-watermark-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    z-index: 600;
+    display: block;
+    visibility: visible;
+}
+
+[data-groupname="watermarkcolorgroup"] .fitem.mb-3,
+[data-groupname="watermarkcolorgroup"] .fitem.form-group {
+    margin-bottom: 0 !important;
+}
+
+.iv-watermark-color-wrap input.form-control,
+input[name="watermarkcolor"] {
+    width: 6.5rem !important;
+    font-family: monospace;
+    text-transform: lowercase;
+}
+
+.iv-watermark-native-picker {
+    width: 2.75rem !important;
+    height: 2.25rem;
+    padding: 0.15rem;
+    cursor: pointer;
+}
+
+.iv-watermark-palette {
+    gap: 0.35rem;
+}
+
+.iv-watermark-swatch {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    border: 2px solid #ced4da;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.iv-watermark-swatch:hover {
+    transform: scale(1.12);
+    border-color: #495057;
+}
+
+.iv-watermark-swatch.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+}

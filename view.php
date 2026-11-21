@@ -482,6 +482,40 @@ unset(
     $moduleinstance->displayoptions['aftercompletionbehavior']
 );
 
+// Dynamic moving watermark settings.
+$wmdefaults = interactivevideo_watermark_defaults();
+$watermarkenabled = isset($moduleinstance->displayoptions['watermarkenabled'])
+    ? !empty($moduleinstance->displayoptions['watermarkenabled'])
+    : (bool)$wmdefaults['watermarkenabled'];
+$watermarkopacity = isset($moduleinstance->displayoptions['watermarkopacity'])
+    ? (int)$moduleinstance->displayoptions['watermarkopacity']
+    : $wmdefaults['watermarkopacity'];
+$watermarkopacity = $watermarkopacity > 0 ? max(5, min(100, $watermarkopacity)) : $wmdefaults['watermarkopacity'];
+$watermarkcolor = interactivevideo_sanitize_hex_color(
+    $moduleinstance->displayoptions['watermarkcolor'] ?? '',
+    $wmdefaults['watermarkcolor']
+);
+$watermarkinterval = isset($moduleinstance->displayoptions['watermarkinterval'])
+    ? max(0, (int)$moduleinstance->displayoptions['watermarkinterval'])
+    : $wmdefaults['watermarkinterval'];
+$watermarksize = $moduleinstance->displayoptions['watermarksize'] ?? $wmdefaults['watermarksize'];
+if (!in_array($watermarksize, ['small', 'medium', 'large'], true)) {
+    $watermarksize = $wmdefaults['watermarksize'];
+}
+$watermarkpositions = [];
+foreach (['tl', 'tr', 'br', 'bl'] as $corner) {
+    $key = 'watermarkpos_' . $corner;
+    $enabled = isset($moduleinstance->displayoptions[$key])
+        ? !empty($moduleinstance->displayoptions[$key])
+        : !empty($wmdefaults[$key]);
+    if ($enabled) {
+        $watermarkpositions[] = $corner;
+    }
+}
+if (empty($watermarkpositions)) {
+    $watermarkpositions = ['tl', 'tr', 'br', 'bl'];
+}
+
 // Display player.
 $datafortemplate = [
     "darkmode" => $moduleinstance->displayoptions['darkmode'] == '1',
@@ -501,8 +535,24 @@ $datafortemplate = [
         || get_config('mod_interactivevideo', 'enableembedly'),
     "courseindex" => $courseindex,
     "hascourseindex" => !empty($courseindex) && $rendernav,
+    "watermarkenabled" => $watermarkenabled,
 ];
 echo $OUTPUT->render_from_template('mod_interactivevideo/player/player', $datafortemplate);
+
+if ($watermarkenabled) {
+    $PAGE->requires->strings_for_js(['watermarktampertitle', 'watermarktamperwarning'], 'mod_interactivevideo');
+    $PAGE->requires->js_call_amd('mod_interactivevideo/watermark', 'init', [[
+        'opacity' => (float)($watermarkopacity / 100),
+        'color' => $watermarkcolor,
+        'interval' => $watermarkinterval,
+        'size' => $watermarksize,
+        'positions' => $watermarkpositions,
+        'fullname' => fullname($USER),
+        'userid' => (int)$USER->id,
+        'userhandle' => !empty($USER->email) ? $USER->email : $USER->username,
+        'servertime' => time(),
+    ]]);
+}
 
 $PAGE->requires->js_call_amd('mod_interactivevideo/viewannotation', 'init', [
     $url, // Video URL.

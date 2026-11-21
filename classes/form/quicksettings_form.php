@@ -150,6 +150,15 @@ class quicksettings_form extends \core_form\dynamic_form {
             'squareposterimage',
             'passwordprotected',
             'courseindex',
+            'watermarkenabled',
+            'watermarkopacity',
+            'watermarkcolor',
+            'watermarkinterval',
+            'watermarksize',
+            'watermarkpos_tl',
+            'watermarkpos_tr',
+            'watermarkpos_br',
+            'watermarkpos_bl',
             'beforecompletion',
             'aftercompletion',
             'beforecompletionbehavior',
@@ -176,6 +185,7 @@ class quicksettings_form extends \core_form\dynamic_form {
                 $defaultvalues[$option] = [];
             }
         }
+        interactivevideo_apply_watermark_defaults($defaultvalues, $defaultdisplayoptions);
         // Backward compatibility.
         $map = [
             'disablechapternavigation' => ['beforecompletion.chaptertoggle', 'aftercompletion.chaptertoggle', function ($v) {
@@ -443,6 +453,9 @@ class quicksettings_form extends \core_form\dynamic_form {
 
         $mform->addElement('header', 'videodisplayoptions', get_string('appearanceandbehaviorsettings', 'mod_interactivevideo'));
         interactivevideo_appearanceandbehavior_form($mform, null);
+
+        $mform->addElement('header', 'watermarksettings', get_string('watermarksettings', 'mod_interactivevideo'));
+        interactivevideo_watermark_form($mform, null);
     }
 
     /**

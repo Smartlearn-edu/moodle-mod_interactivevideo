@@ -373,6 +373,10 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
 
         interactivevideo_appearanceandbehavior_form($mform, $current);
 
+        // WATERMARK SETTINGS.
+        $mform->addElement('header', 'watermarksettings', get_string('watermarksettings', 'mod_interactivevideo'));
+        interactivevideo_watermark_form($mform, $current);
+
         // Additional settings from external plugins.
         if (!empty($this->subplugins)) {
             $mform->addElement('header', 'additionalsettings', get_string('additionalsettings', 'mod_interactivevideo'));
@@ -429,6 +433,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                     $mform->setDefault('completionpercentageenabled', 1);
                 }
                 $displayoptions = json_decode($settings->displayoptions, true);
+                interactivevideo_apply_watermark_defaults($displayoptions, $displayoptions);
                 $mform->setDefaults($displayoptions);
                 if ($displayoptions['usecustomposterimage']) {
                     $mform->setDefault('usecustomposterimage', 1);
@@ -671,6 +676,15 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                 'squareposterimage',
                 'passwordprotected',
                 'courseindex',
+                'watermarkenabled',
+                'watermarkopacity',
+                'watermarkcolor',
+                'watermarkinterval',
+                'watermarksize',
+                'watermarkpos_tl',
+                'watermarkpos_tr',
+                'watermarkpos_br',
+                'watermarkpos_bl',
                 'beforecompletion',
                 'aftercompletion',
                 'beforecompletionbehavior',
@@ -699,6 +713,7 @@ class mod_interactivevideo_mod_form extends moodleform_mod {
                     $defaultvalues[$option] = [];
                 }
             }
+            interactivevideo_apply_watermark_defaults($defaultvalues, $defaultdisplayoptions);
 
             // Backward compatibility.
             $mapping = [

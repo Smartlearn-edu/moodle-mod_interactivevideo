@@ -80,6 +80,87 @@ function interactivevideo_get_subplugins($classname) {
 }
 
 /**
+ * Returns the site-wide default enabled state for the moving watermark.
+ *
+ * @return int 1 if enabled by default, 0 otherwise.
+ */
+function interactivevideo_default_watermark_enabled(): int {
+    $configured = get_config('mod_interactivevideo', 'defaultwatermarkenabled');
+    return ($configured === false) ? 1 : (int)!empty($configured);
+}
+
+/**
+ * Sanitizes a hex color string to #rrggbb format.
+ *
+ * @param mixed $color Input color value.
+ * @param string $fallback Default hex color if invalid.
+ * @return string
+ */
+function interactivevideo_sanitize_hex_color($color, string $fallback = '#ffffff'): string {
+    $color = strtolower(trim((string)$color));
+    if (preg_match('/^#?([0-9a-f]{6})$/', $color, $matches)) {
+        return '#' . $matches[1];
+    }
+    if (preg_match('/^#?([0-9a-f])([0-9a-f])([0-9a-f])$/', $color, $matches)) {
+        return '#' . $matches[1] . $matches[1] . $matches[2] . $matches[2] . $matches[3] . $matches[3];
+    }
+    return $fallback;
+}
+
+/**
+ * Returns site-wide default settings for all watermark options.
+ *
+ * @return array
+ */
+function interactivevideo_watermark_defaults(): array {
+    $opacity = get_config('mod_interactivevideo', 'defaultwatermarkopacity');
+    $color = get_config('mod_interactivevideo', 'defaultwatermarkcolor');
+    $interval = get_config('mod_interactivevideo', 'defaultwatermarkinterval');
+    $size = get_config('mod_interactivevideo', 'defaultwatermarksize');
+    $positions = get_config('mod_interactivevideo', 'defaultwatermarkpositions');
+
+    if ($positions === false) {
+        $poslist = ['tl', 'tr', 'br', 'bl'];
+    } else {
+        $poslist = array_filter(array_map('trim', explode(',', (string)$positions)));
+    }
+
+    return [
+        'watermarkenabled' => interactivevideo_default_watermark_enabled(),
+        'watermarkopacity' => ($opacity !== false && (int)$opacity > 0) ? max(5, min(100, (int)$opacity)) : 35,
+        'watermarkcolor' => interactivevideo_sanitize_hex_color($color, '#ffffff'),
+        'watermarkinterval' => ($interval !== false && $interval !== '') ? max(0, (int)$interval) : 60,
+        'watermarksize' => in_array($size, ['small', 'medium', 'large'], true) ? $size : 'medium',
+        'watermarkpos_tl' => in_array('tl', $poslist, true) ? 1 : 0,
+        'watermarkpos_tr' => in_array('tr', $poslist, true) ? 1 : 0,
+        'watermarkpos_br' => in_array('br', $poslist, true) ? 1 : 0,
+        'watermarkpos_bl' => in_array('bl', $poslist, true) ? 1 : 0,
+    ];
+}
+
+/**
+ * Fills missing watermark keys in $target from site defaults without overwriting explicit values.
+ *
+ * @param array $target Target defaults array.
+ * @param array $source Stored displayoptions array.
+ * @return void
+ */
+function interactivevideo_apply_watermark_defaults(array &$target, array $source): void {
+    $defaults = interactivevideo_watermark_defaults();
+    foreach ($defaults as $key => $defaultval) {
+        if (!array_key_exists($key, $source)) {
+            $target[$key] = $defaultval;
+        } else if ($key === 'watermarkopacity' && empty($target[$key])) {
+            $target[$key] = $defaultval;
+        } else if ($key === 'watermarkcolor') {
+            $target[$key] = interactivevideo_sanitize_hex_color($target[$key], $defaultval);
+        } else if ($key === 'watermarksize' && !in_array($target[$key], ['small', 'medium', 'large'], true)) {
+            $target[$key] = $defaultval;
+        }
+    }
+}
+
+/**
  * Mod edit form display options
  *
  * @param mixed $moduleinstance
@@ -118,6 +199,24 @@ function interactivevideo_display_options($moduleinstance) {
     ];
     foreach ($fields as $field) {
         $options[$field] = $moduleinstance->$field ?? 0;
+    }
+    $wmdefaults = interactivevideo_watermark_defaults();
+    $options['watermarkenabled'] = isset($moduleinstance->watermarkenabled)
+        ? (int)!empty($moduleinstance->watermarkenabled)
+        : $wmdefaults['watermarkenabled'];
+    $watermarkopacity = isset($moduleinstance->watermarkopacity) ? (int)$moduleinstance->watermarkopacity : $wmdefaults['watermarkopacity'];
+    $options['watermarkopacity'] = $watermarkopacity > 0 ? max(5, min(100, $watermarkopacity)) : $wmdefaults['watermarkopacity'];
+    $options['watermarkcolor'] = interactivevideo_sanitize_hex_color(
+        $moduleinstance->watermarkcolor ?? '',
+        $wmdefaults['watermarkcolor']
+    );
+    $options['watermarkinterval'] = isset($moduleinstance->watermarkinterval)
+        ? max(0, (int)$moduleinstance->watermarkinterval)
+        : $wmdefaults['watermarkinterval'];
+    $size = $moduleinstance->watermarksize ?? $wmdefaults['watermarksize'];
+    $options['watermarksize'] = in_array($size, ['small', 'medium', 'large'], true) ? $size : $wmdefaults['watermarksize'];
+    foreach (['watermarkpos_tl', 'watermarkpos_tr', 'watermarkpos_br', 'watermarkpos_bl'] as $poskey) {
+        $options[$poskey] = isset($moduleinstance->$poskey) ? (int)!empty($moduleinstance->$poskey) : $wmdefaults[$poskey];
     }
     $options['beforecompletion'] = $moduleinstance->beforecompletion ?? interactivevideo_default_appearance();
     $options['aftercompletion'] = $moduleinstance->aftercompletion ?? interactivevideo_default_appearance();
@@ -2093,7 +2192,7 @@ function interactivevideo_default_appearance() {
  * @return void
  */
 function interactivevideo_appearanceandbehavior_form($mform, $current, $sections = ['appearance', 'behavior']) {
-    global $CFG;
+    global $CFG, $PAGE;
     if (in_array('appearance', $sections)) {
         $mform->addElement(
             'html',
@@ -2565,6 +2664,158 @@ function interactivevideo_appearanceandbehavior_form($mform, $current, $sections
     $defaultarray['aftercompletionbehavior'] = $defaultarray['beforecompletionbehavior'];
 
     $mform->setDefaults($defaultarray);
+}
+
+/**
+ * Form elements for activity-level dynamic watermark settings (overriding system defaults).
+ *
+ * @param mixed $mform
+ * @param mixed $current
+ * @param bool $subheading
+ * @return void
+ */
+function interactivevideo_watermark_form($mform, $current = null, $subheading = false) {
+    global $PAGE;
+
+    if ($subheading) {
+        $mform->addElement('html', '<h5 class="w-100 border-bottom mt-3">'
+            . get_string('watermarksettings', 'mod_interactivevideo') . '</h5>');
+    }
+
+    $mform->addElement(
+        'advcheckbox',
+        'watermarkenabled',
+        get_string('watermarkenabled', 'mod_interactivevideo'),
+        ' ',
+        ['group' => 1],
+        [0, 1]
+    );
+    $mform->addHelpButton('watermarkenabled', 'watermarkenabled', 'mod_interactivevideo');
+
+    $mform->addElement(
+        'select',
+        'watermarkopacity',
+        get_string('watermarkopacity', 'mod_interactivevideo'),
+        [
+            5 => '5%',
+            10 => '10%',
+            15 => '15%',
+            20 => '20%',
+            25 => '25%',
+            35 => '35%',
+            50 => '50%',
+            75 => '75%',
+            100 => '100%',
+        ]
+    );
+    $mform->setType('watermarkopacity', PARAM_INT);
+    $mform->addHelpButton('watermarkopacity', 'watermarkopacity', 'mod_interactivevideo');
+    $mform->hideIf('watermarkopacity', 'watermarkenabled', 'eq', 0);
+
+    $palette = ['#ffffff', '#000000', '#facc15', '#38bdf8', '#4ade80', '#f87171', '#fb923c', '#c084fc'];
+    $colorgroup = [];
+    $colorgroup[] = $mform->createElement(
+        'text',
+        'watermarkcolor',
+        '',
+        [
+            'maxlength' => 16,
+            'size' => 9,
+            'placeholder' => '#ffffff',
+            'class' => 'iv-watermark-color-wrap',
+        ]
+    );
+    $swatchhtml = '<input type="color" class="form-control form-control-color iv-watermark-native-picker ml-2 ms-2" '
+        . 'value="#ffffff" title="' . s(get_string('watermarkcolor', 'mod_interactivevideo')) . '" '
+        . 'aria-label="' . s(get_string('watermarkcolor', 'mod_interactivevideo')) . '">';
+    $swatchhtml .= '<div class="iv-watermark-palette d-inline-flex align-items-center flex-wrap ml-2 ms-2">';
+    foreach ($palette as $hex) {
+        $swatchhtml .= '<button type="button" class="iv-watermark-swatch" data-color="' . $hex . '" '
+            . 'style="background-color:' . $hex . ';" title="' . $hex . '" aria-label="' . $hex . '"></button>';
+    }
+    $swatchhtml .= '</div>';
+    $swatchhtml .= '<script>if (window.require) { window.require(["mod_interactivevideo/watermarkpicker"], function(wp) {'
+        . ' if (wp && wp.init) { wp.init(); } }); }</script>';
+    $colorgroup[] = $mform->createElement('html', $swatchhtml);
+    $mform->addGroup(
+        $colorgroup,
+        'watermarkcolorgroup',
+        get_string('watermarkcolor', 'mod_interactivevideo'),
+        ' ',
+        false
+    );
+    $mform->setType('watermarkcolor', PARAM_TEXT);
+    $mform->addHelpButton('watermarkcolorgroup', 'watermarkcolor', 'mod_interactivevideo');
+    $mform->hideIf('watermarkcolorgroup', 'watermarkenabled', 'eq', 0);
+    $PAGE->requires->js_call_amd('mod_interactivevideo/watermarkpicker', 'init');
+
+    $mform->addElement(
+        'select',
+        'watermarkinterval',
+        get_string('watermarkinterval', 'mod_interactivevideo'),
+        [
+            15 => get_string('watermarkinterval_15', 'mod_interactivevideo'),
+            30 => get_string('watermarkinterval_30', 'mod_interactivevideo'),
+            60 => get_string('watermarkinterval_60', 'mod_interactivevideo'),
+            120 => get_string('watermarkinterval_120', 'mod_interactivevideo'),
+            300 => get_string('watermarkinterval_300', 'mod_interactivevideo'),
+            0 => get_string('watermarkinterval_0', 'mod_interactivevideo'),
+        ]
+    );
+    $mform->setType('watermarkinterval', PARAM_INT);
+    $mform->addHelpButton('watermarkinterval', 'watermarkinterval', 'mod_interactivevideo');
+    $mform->hideIf('watermarkinterval', 'watermarkenabled', 'eq', 0);
+
+    $mform->addElement(
+        'select',
+        'watermarksize',
+        get_string('watermarksize', 'mod_interactivevideo'),
+        [
+            'small' => get_string('watermarksize_small', 'mod_interactivevideo'),
+            'medium' => get_string('watermarksize_medium', 'mod_interactivevideo'),
+            'large' => get_string('watermarksize_large', 'mod_interactivevideo'),
+        ]
+    );
+    $mform->setType('watermarksize', PARAM_ALPHA);
+    $mform->addHelpButton('watermarksize', 'watermarksize', 'mod_interactivevideo');
+    $mform->hideIf('watermarksize', 'watermarkenabled', 'eq', 0);
+
+    $cornergroup = [];
+    $corners = [
+        'watermarkpos_tl' => get_string('watermarkpos_tl', 'mod_interactivevideo'),
+        'watermarkpos_tr' => get_string('watermarkpos_tr', 'mod_interactivevideo'),
+        'watermarkpos_br' => get_string('watermarkpos_br', 'mod_interactivevideo'),
+        'watermarkpos_bl' => get_string('watermarkpos_bl', 'mod_interactivevideo'),
+    ];
+    foreach ($corners as $key => $label) {
+        $cornergroup[] = $mform->createElement(
+            'advcheckbox',
+            $key,
+            '',
+            $label,
+            ['group' => 1],
+            [0, 1]
+        );
+    }
+    $mform->addGroup(
+        $cornergroup,
+        'watermarkpositionsgroup',
+        get_string('watermarkpositions', 'mod_interactivevideo'),
+        '',
+        false
+    );
+    $mform->addHelpButton('watermarkpositionsgroup', 'watermarkpositions', 'mod_interactivevideo');
+    $mform->hideIf('watermarkpositionsgroup', 'watermarkenabled', 'eq', 0);
+
+    if ($current && !$current->instance) {
+        $cache = \cache::make('mod_interactivevideo', 'interactivevideo_settings');
+        $coursedefaults = $cache->get($current->course);
+        if ($coursedefaults && get_config('mod_interactivevideo', 'enablecoursesettings')) {
+            return;
+        }
+    }
+
+    $mform->setDefaults(interactivevideo_watermark_defaults());
 }
 
 /**

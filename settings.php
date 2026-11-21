@@ -368,6 +368,83 @@ $bsettings->add(new admin_setting_configmulticheckbox(
     ],
 ));
 
+$bsettings->add(new admin_setting_configcheckbox(
+    'mod_interactivevideo/defaultwatermarkenabled',
+    get_string('defaultwatermarkenabled', 'mod_interactivevideo'),
+    get_string('defaultwatermarkenabled_desc', 'mod_interactivevideo'),
+    1
+));
+
+$bsettings->add(new admin_setting_configselect(
+    'mod_interactivevideo/defaultwatermarkopacity',
+    get_string('defaultwatermarkopacity', 'mod_interactivevideo'),
+    get_string('defaultwatermarkopacity_desc', 'mod_interactivevideo'),
+    35,
+    [
+        5 => '5%',
+        10 => '10%',
+        15 => '15%',
+        20 => '20%',
+        25 => '25%',
+        35 => '35%',
+        50 => '50%',
+        75 => '75%',
+        100 => '100%',
+    ]
+));
+
+$bsettings->add(new admin_setting_configcolourpicker(
+    'mod_interactivevideo/defaultwatermarkcolor',
+    get_string('defaultwatermarkcolor', 'mod_interactivevideo'),
+    get_string('defaultwatermarkcolor_desc', 'mod_interactivevideo'),
+    '#ffffff'
+));
+
+$bsettings->add(new admin_setting_configselect(
+    'mod_interactivevideo/defaultwatermarkinterval',
+    get_string('defaultwatermarkinterval', 'mod_interactivevideo'),
+    get_string('defaultwatermarkinterval_desc', 'mod_interactivevideo'),
+    60,
+    [
+        15 => get_string('watermarkinterval_15', 'mod_interactivevideo'),
+        30 => get_string('watermarkinterval_30', 'mod_interactivevideo'),
+        60 => get_string('watermarkinterval_60', 'mod_interactivevideo'),
+        120 => get_string('watermarkinterval_120', 'mod_interactivevideo'),
+        300 => get_string('watermarkinterval_300', 'mod_interactivevideo'),
+        0 => get_string('watermarkinterval_0', 'mod_interactivevideo'),
+    ]
+));
+
+$bsettings->add(new admin_setting_configselect(
+    'mod_interactivevideo/defaultwatermarksize',
+    get_string('defaultwatermarksize', 'mod_interactivevideo'),
+    get_string('defaultwatermarksize_desc', 'mod_interactivevideo'),
+    'medium',
+    [
+        'small' => get_string('watermarksize_small', 'mod_interactivevideo'),
+        'medium' => get_string('watermarksize_medium', 'mod_interactivevideo'),
+        'large' => get_string('watermarksize_large', 'mod_interactivevideo'),
+    ]
+));
+
+$bsettings->add(new admin_setting_configmulticheckbox(
+    'mod_interactivevideo/defaultwatermarkpositions',
+    get_string('defaultwatermarkpositions', 'mod_interactivevideo'),
+    get_string('defaultwatermarkpositions_desc', 'mod_interactivevideo'),
+    [
+        'tl' => 1,
+        'tr' => 1,
+        'br' => 1,
+        'bl' => 1,
+    ],
+    [
+        'tl' => get_string('watermarkpos_tl', 'mod_interactivevideo'),
+        'tr' => get_string('watermarkpos_tr', 'mod_interactivevideo'),
+        'br' => get_string('watermarkpos_br', 'mod_interactivevideo'),
+        'bl' => get_string('watermarkpos_bl', 'mod_interactivevideo'),
+    ]
+));
+
 $ADMIN->add('modivfolder', $bsettings);
 
 // Report settings page.

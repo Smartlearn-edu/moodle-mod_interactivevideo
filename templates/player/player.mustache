@@ -75,6 +75,11 @@ Example context (json):
                     {{> mod_interactivevideo/player/startscreen}}
                     {{> mod_interactivevideo/player/endscreen}}
                     {{> mod_interactivevideo/player/annotationcanvas}}
+                    {{#watermarkenabled}}
+                    <canvas id="iv-watermark-canvas"
+                            class="iv-watermark-canvas position-absolute top-0 start-0 w-100 h-100"
+                            aria-hidden="true"></canvas>
+                    {{/watermarkenabled}}
 
                     {{#displayoptions.hidemainvideocontrols}}
                     <div id="lightprogress" role="progressbar"
